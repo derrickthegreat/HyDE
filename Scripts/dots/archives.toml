@@ -21,7 +21,7 @@ paths = ["index.theme", "cursor.theme", "cursors"]
 [[cursor-bibata-modern-ice.files]]
 action = "tarball"
 target_root = "/usr/local/share/icons/Bibata-Modern-Ice"
-paths = ["index.theme", "cursor.theme", "cursors"]
+paths = "."
 
 [hyprcursor-bibata-modern-ice]
 version = "1.0.0"
@@ -34,10 +34,16 @@ action = "sync"
 target_root = "${XDG_DATA_HOME}/icons/Bibata-Modern-Ice"
 paths = ["manifest.hl", "hyprcursors"]
 
+# NOTE: system-wide hyprcursor payload lives in its own directory. The tarball
+# action extracts into `target_root` as a whole, so it cannot share
+# /usr/local/share/icons/Bibata-Modern-Ice with cursor-bibata-modern-ice —
+# deez treats a second dot claiming the same dst as a file conflict.
+# hyprcursor resolves a theme by its manifest `name` OR the directory stem, so
+# `name = Bibata-Modern-Ice` inside manifest.hl still matches here.
 [[hyprcursor-bibata-modern-ice.files]]
 action = "tarball"
-target_root = "/usr/local/share/icons/Bibata-Modern-Ice"
-paths = ["manifest.hl", "hyprcursors"]
+target_root = "/usr/local/share/icons/Bibata-Modern-Ice-hyprcursor"
+paths = "."
 
 [font-cantarell]
 source = "blob+https://gitlab.gnome.org/GNOME/cantarell-fonts/-/package_files/1278/download"
