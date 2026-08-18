@@ -591,7 +591,16 @@ dconf_write() {
         print_log -sec "dconf" -warn "failed to set" "$key"
     fi
 }
-export -f get_hyprConf get_monitor_scale get_rofi_pos is_hovered toml_write get_hashmap get_aurhlpr set_conf set_hash check_package get_themes print_log pkg_installed paste_string extract_thumbnail accepted_mime_types dconf_write send_notifs export_hyde_config wallbash_state_is_complete
+# Rofi lays out exactly as many columns as it is told, so a bad monitor
+# resolution degrades silently into unreadable slivers. Clamp to [1, max].
+clamp_col_count() {
+    local count="${1:-1}" max="${2:-5}"
+    [[ $count =~ ^-?[0-9]+$ ]] || count=1
+    ((count < 1)) && count=1
+    ((count > max)) && count=$max
+    printf "%d" "$count"
+}
+export -f get_hyprConf get_monitor_scale clamp_col_count get_rofi_pos is_hovered toml_write get_hashmap get_aurhlpr set_conf set_hash check_package get_themes print_log pkg_installed paste_string extract_thumbnail accepted_mime_types dconf_write send_notifs export_hyde_config wallbash_state_is_complete
 
 ##
 # Fails the source when the generated-state directories could not be created,
