@@ -402,11 +402,80 @@ get_monitor_scale() {
         printf "%d", scale * 100 + 0.5
     }'
 }
-# A wallpaper narrower than the screen (a 16:9 image on a 32:9 monitor) loses its
-# top and bottom to swww/awww's default `--resize crop`. Fitting keeps the whole
-# image but leaves padding at the sides; fill that with the wallpaper's own
-# wallbash primary so the bars read as a matte instead of a black void. The dcol
-# is written asynchronously by color.set.sh, so a wallpaper being seen for the
+# A wallpaper narrower than the screen (anything but a true 32:9 image on an
+# ultrawide) has to give up either its edges or the screen's. Cropping to fill
+# throws away most of an ordinary 16:9 wallpaper; fitting keeps all of it but
+# strands it in flat bars. "ambient" does neither: it fits the image over a
+# blurred, dimmed copy of itself scaled to fill, so the padding carries the
+# wallpaper's own colours and light. The composite is cached per source *and*
+# per screen size, and only built when the aspect ratios actually differ enough
+# to matter -- an image already close to the screen's shape is left for the
+# backend to crop, which costs nothing and loses nothing visible.
+#
+# Echoes "<resize-mode>\t<image path>" for the backend to apply. On any failure
+# it falls back to the original image with a plain resize mode, so a missing
+# ImageMagick or an unreadable file degrades to upstream behaviour.
+get_screen_geometry() {
+    local geo
+    [[ -n $HYPRLAND_INSTANCE_SIGNATURE ]] && geo="$(hyprctl -j monitors 2>/dev/null |
+        jq -r 'first(.[] | select(.focused==true)) |
+            if (.transform % 2 == 0) then "\(.width) \(.height)" else "\(.height) \(.width)" end' 2>/dev/null)"
+    [[ $geo =~ ^[0-9]+\ [0-9]+$ ]] || geo="1920 1080"
+    echo "$geo"
+}
+fit_wallpaper() {
+    local image="$1" mode="${2:-ambient}"
+    if [ "$mode" != "ambient" ]; then
+        printf '%s\t%s' "$mode" "$image"
+        return 0
+    fi
+    local scr_w scr_h img_w img_h
+    read -r scr_w scr_h < <(get_screen_geometry)
+    read -r img_w img_h < <(magick identify -format '%w %h' "$image[0]" 2>/dev/null)
+    # No ImageMagick, an unreadable image, or an animation we would freeze:
+    # hand it back and let the backend crop as it always did.
+    if [[ ! $img_w =~ ^[0-9]+$ ]] || [[ ! $img_h =~ ^[0-9]+$ ]] ||
+        [[ $(file --mime-type -b "$image" 2>/dev/null) == "image/gif" ]]; then
+        printf '%s\t%s' "crop" "$image"
+        return 0
+    fi
+    local tolerance="${WALLPAPER_FIT_TOLERANCE:-0.05}"
+    if awk -v iw="$img_w" -v ih="$img_h" -v sw="$scr_w" -v sh="$scr_h" -v t="$tolerance" \
+        'BEGIN { exit !( (iw/ih) / (sw/sh) > 1 - t && (iw/ih) / (sw/sh) < 1 + t ) }'; then
+        printf '%s\t%s' "crop" "$image"
+        return 0
+    fi
+    local blur="${WALLPAPER_AMBIENT_BLUR:-12}" dim="${WALLPAPER_AMBIENT_DIM:--35}"
+    local cache_dir="$HYDE_CACHE_HOME/wallpapers/ambient"
+    local cached="$cache_dir/$(set_hash "$image")-${scr_w}x${scr_h}-${blur}-${dim}.jpg"
+    if [ ! -s "$cached" ]; then
+        mkdir -p "$cache_dir"
+        # The backdrop is blurred at an eighth scale and stretched back up: a
+        # radius-12 blur on a thumbnail is indistinguishable from a radius-96
+        # blur on the full canvas and finishes in a fraction of the time.
+        if ! magick "$image[0]" \
+            \( -clone 0 -resize "$((scr_w / 8))x$((scr_h / 8))^" -gravity center \
+            -extent "$((scr_w / 8))x$((scr_h / 8))" -blur "0x${blur}" \
+            -brightness-contrast "${dim}x-20" -resize "${scr_w}x${scr_h}!" \) \
+            \( -clone 0 -resize "${scr_w}x${scr_h}" \) \
+            -delete 0 -gravity center -composite -quality 95 "$cached" 2> /dev/null; then
+            rm -f "$cached"
+            printf '%s\t%s' "crop" "$image"
+            return 0
+        fi
+        # Every wallpaper the user cycles past leaves a screen-sized composite
+        # behind, so keep only the most recent ones; anything evicted is one
+        # magick call away from coming back.
+        find "$cache_dir" -maxdepth 1 -type f -printf '%T@ %p\0' 2> /dev/null |
+            sort -zrn | tail -zn "+$((${WALLPAPER_AMBIENT_CACHE_KEEP:-50} + 1))" |
+            cut -zd' ' -f2- | xargs -0r rm -f
+    fi
+    touch "$cached"
+    printf '%s\t%s' "crop" "$cached"
+}
+# Padding colour for plain `fit` mode, taken from the wallpaper's own wallbash
+# primary so the bars read as a matte rather than a black void. The dcol is
+# written asynchronously by color.set.sh, so a wallpaper being seen for the
 # first time falls back to the global one, then to black.
 get_wallpaper_fill_color() {
     local image="$1" dcol_file color=""
@@ -618,7 +687,7 @@ clamp_col_count() {
     ((count > max)) && count=$max
     printf "%d" "$count"
 }
-export -f get_hyprConf get_monitor_scale clamp_col_count get_wallpaper_fill_color get_rofi_pos is_hovered toml_write get_hashmap get_aurhlpr set_conf set_hash check_package get_themes print_log pkg_installed paste_string extract_thumbnail accepted_mime_types dconf_write send_notifs export_hyde_config wallbash_state_is_complete
+export -f get_hyprConf get_monitor_scale clamp_col_count get_wallpaper_fill_color get_rofi_pos is_hovered toml_write get_hashmap get_aurhlpr set_conf set_hash check_package get_themes print_log pkg_installed paste_string extract_thumbnail accepted_mime_types dconf_write send_notifs export_hyde_config wallbash_state_is_complete get_screen_geometry fit_wallpaper
 
 ##
 # Fails the source when the generated-state directories could not be created,
