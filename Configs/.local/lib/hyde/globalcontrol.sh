@@ -402,6 +402,24 @@ get_monitor_scale() {
         printf "%d", scale * 100 + 0.5
     }'
 }
+# A wallpaper narrower than the screen (a 16:9 image on a 32:9 monitor) loses its
+# top and bottom to swww/awww's default `--resize crop`. Fitting keeps the whole
+# image but leaves padding at the sides; fill that with the wallpaper's own
+# wallbash primary so the bars read as a matte instead of a black void. The dcol
+# is written asynchronously by color.set.sh, so a wallpaper being seen for the
+# first time falls back to the global one, then to black.
+get_wallpaper_fill_color() {
+    local image="$1" dcol_file color=""
+    if [[ $WALLPAPER_FILL_COLOR =~ ^[0-9a-fA-F]{8}$ ]]; then
+        echo "$WALLPAPER_FILL_COLOR"
+        return 0
+    fi
+    [ -f "$image" ] && dcol_file="$dcolDir/$(set_hash "$image").dcol"
+    [ -f "$dcol_file" ] || dcol_file="$HYDE_CACHE_HOME/wall.dcol"
+    [ -f "$dcol_file" ] && color="$(grep -m1 '^dcol_pry1=' "$dcol_file" | cut -d '"' -f2)"
+    [[ $color =~ ^[0-9a-fA-F]{6}$ ]] || color="000000"
+    echo "${color}ff"
+}
 get_rofi_pos() {
     [[ -n $HYPRLAND_INSTANCE_SIGNATURE ]] || return 1
     readarray -t curPos < <(hyprctl cursorpos -j | jq -r '.x,.y')
@@ -600,7 +618,7 @@ clamp_col_count() {
     ((count > max)) && count=$max
     printf "%d" "$count"
 }
-export -f get_hyprConf get_monitor_scale clamp_col_count get_rofi_pos is_hovered toml_write get_hashmap get_aurhlpr set_conf set_hash check_package get_themes print_log pkg_installed paste_string extract_thumbnail accepted_mime_types dconf_write send_notifs export_hyde_config wallbash_state_is_complete
+export -f get_hyprConf get_monitor_scale clamp_col_count get_wallpaper_fill_color get_rofi_pos is_hovered toml_write get_hashmap get_aurhlpr set_conf set_hash check_package get_themes print_log pkg_installed paste_string extract_thumbnail accepted_mime_types dconf_write send_notifs export_hyde_config wallbash_state_is_complete
 
 ##
 # Fails the source when the generated-state directories could not be created,

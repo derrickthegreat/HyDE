@@ -38,5 +38,15 @@ xtrans=$WALLPAPER_SWWW_TRANSITION_DEFAULT
 [ -z "$xtrans" ] && xtrans="grow"
 [ -z "$wallFramerate" ] && wallFramerate=60
 [ -z "$wallTransDuration" ] && wallTransDuration=0.4
+# Fit by default: cropping to a 32:9 screen eats most of a 16:9 wallpaper. See
+# get_wallpaper_fill_color for what pads the leftover sides. Set
+# WALLPAPER_SWWW_RESIZE=crop to get the upstream fill-and-crop behaviour back,
+# and WALLPAPER_SWWW_CROP_GRAVITY to choose which part of it survives.
+wall_resize="${WALLPAPER_SWWW_RESIZE:-${WALLPAPER_RESIZE:-fit}}"
+wall_fill="$(get_wallpaper_fill_color "$selected_wall")"
+resize_args=(--resize "$wall_resize" --fill-color "$wall_fill")
+if [ "$wall_resize" == "crop" ] && [ -n "${WALLPAPER_SWWW_CROP_GRAVITY:-$WALLPAPER_CROP_GRAVITY}" ]; then
+    resize_args+=(--crop-gravity "${WALLPAPER_SWWW_CROP_GRAVITY:-$WALLPAPER_CROP_GRAVITY}")
+fi
 print_log -sec "wallpaper" -stat "apply" "$selected_wall"
-timeout 30 swww img "$(readlink -f "$selected_wall")" --transition-bezier .43,1.19,1,.4 --transition-type "$xtrans" --transition-duration "$wallTransDuration" --transition-fps "$wallFramerate" --invert-y --transition-pos "$(hyprctl cursorpos | grep -E '^[0-9]' || echo "0,0")"
+timeout 30 swww img "$(readlink -f "$selected_wall")" "${resize_args[@]}" --transition-bezier .43,1.19,1,.4 --transition-type "$xtrans" --transition-duration "$wallTransDuration" --transition-fps "$wallFramerate" --invert-y --transition-pos "$(hyprctl cursorpos | grep -E '^[0-9]' || echo "0,0")"
