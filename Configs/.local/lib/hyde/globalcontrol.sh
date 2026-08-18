@@ -445,7 +445,15 @@ fit_wallpaper() {
         printf '%s\t%s' "crop" "$image"
         return 0
     fi
-    local blur="${WALLPAPER_AMBIENT_BLUR:-12}" dim="${WALLPAPER_AMBIENT_DIM:--35}"
+    # The backdrop is the image zoomed to fill, so the further its shape is from
+    # the screen's the more it is magnified -- and a fixed blur that dissolves a
+    # 16:9 backdrop leaves a poster's faces perfectly readable at 5x. Scale the
+    # radius with that mismatch so the padding stays an abstract wash whatever
+    # the source shape is.
+    local base_blur="${WALLPAPER_AMBIENT_BLUR:-12}" dim="${WALLPAPER_AMBIENT_DIM:--35}" blur
+    blur=$(awk -v iw="$img_w" -v ih="$img_h" -v sw="$scr_w" -v sh="$scr_h" -v b="$base_blur" \
+        'BEGIN { m = (iw / ih) / (sw / sh); if (m < 1) m = 1 / m
+                 r = int(b * m / 2 + 0.5); if (r < b) r = b; if (r > b * 4) r = b * 4; print r }')
     local cache_dir="$HYDE_CACHE_HOME/wallpapers/ambient"
     local cached="$cache_dir/$(set_hash "$image")-${scr_w}x${scr_h}-${blur}-${dim}.jpg"
     if [ ! -s "$cached" ]; then
