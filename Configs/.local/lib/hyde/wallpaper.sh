@@ -230,6 +230,17 @@ main() {
             ;;
         esac
     fi
+    # Pin before applying, so the backend picks the new mode up on this run and
+    # the user sees what they just asked for instead of having to re-set it.
+    if [ -n "$fit_override" ]; then
+        if [[ ! $fit_override =~ ^(auto|ambient|crop|fit|stretch|no)(:[0-9]+)?$ ]]; then
+            print_log -sec "wallpaper" -err "Invalid fit mode: $fit_override"
+            print_log -sec "wallpaper" " Use: auto | ambient[:budget] | crop | fit | stretch | no"
+            exit 1
+        fi
+        set_wallpaper_fit_override "$(realpath "$wallSet")" "$fit_override"
+        print_log -sec "wallpaper" "Fit mode for $(basename "$(realpath "$wallSet")"): $fit_override"
+    fi
     local backend_status=0
     if [ -f "$LIB_DIR/hyde/wallpaper.$wallpaper_backend.sh" ] && [ -n "$wallpaper_backend" ]; then
         print_log -sec "wallpaper" "Using backend: $wallpaper_backend"
@@ -259,7 +270,7 @@ if [ -z "$*" ]; then
     echo "No arguments provided"
     show_help
 fi
-LONGOPTS="link,global,select,multi-select,json,next,previous,random,set:,start,backend:,get,output:,help,filetypes:,cache:"
+LONGOPTS="link,global,select,multi-select,json,next,previous,random,set:,start,backend:,get,output:,help,filetypes:,cache:,fit:"
 PARSED=$(getopt --options GSjnprb:s:t:go:h --longoptions "$LONGOPTS" --name "$0" -- "$@") || exit 2
 WALLPAPER_OVERRIDE_FILETYPES=()
 wallpaper_backend="${WALLPAPER_BACKEND:-awww}"
@@ -270,6 +281,7 @@ multi_select=false
 cache_flag=false
 cache_mode=""
 cache_arg=""
+fit_override=""
 eval set -- "$PARSED"
 while true; do
     case "$1" in
@@ -317,6 +329,10 @@ while true; do
     -g | --get)
         wallpaper_setter_flag=g
         shift
+        ;;
+    --fit)
+        fit_override="$2"
+        shift 2
         ;;
     -b | --backend)
         wallpaper_backend="${2:-"$WALLPAPER_BACKEND"}"

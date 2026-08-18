@@ -18,6 +18,8 @@ options:
     -t  --filetypes <types>   Specify file types to override (colon-separated ':')
         --cache <mode> [arg]  Build wallpaper cache
                               modes: current, wall <file>, theme <name>, full
+        --fit <mode>          Pin how this wallpaper is fitted to the screen
+                              modes: auto, ambient[:budget], crop, fit, stretch, no
     -h, --help                Display this help message
 
 flags:
@@ -36,6 +38,13 @@ notes:
        --output <path> is used to copy the current wallpaper to the specified path
             We can use this to have a copy of the wallpaper to '/var/tmp' where sddm or
             any systemwide application can access it
+
+       --fit <mode> pins the current wallpaper to one fit mode, overriding the
+            automatic choice for that image only. 'ambient' fits it over a blurred
+            copy of itself; append a budget to say how much of it may be cropped
+            away first, e.g. '--fit ambient:0' to keep every pixel. 'auto' removes
+            the pin. Overrides live in ~/.local/state/hyde/wallpaper.fit, keyed by
+            image content, so they survive renaming or moving the file
 EOF
     exit 0
 }

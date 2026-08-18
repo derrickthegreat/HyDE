@@ -423,8 +423,58 @@ get_screen_geometry() {
     [[ $geo =~ ^[0-9]+\ [0-9]+$ ]] || geo="1920 1080"
     echo "$geo"
 }
+# No band rule survives contact with every image, so any single wallpaper can be
+# pinned to its own mode. Keyed by content hash, which follows the file when it
+# is renamed or moved between theme folders; the trailing basename is a comment
+# for whoever opens the file, and is not matched on.
+wallpaper_fit_overrides() { echo "$HYDE_STATE_HOME/wallpaper.fit"; }
+get_wallpaper_fit_override() {
+    local file
+    file="$(wallpaper_fit_overrides)"
+    [ -f "$file" ] || return 0
+    awk -v h="$(set_hash "$1")" '$1 == h { print $2; exit }' "$file"
+}
+set_wallpaper_fit_override() {
+    local image="$1" mode="$2" file hash
+    file="$(wallpaper_fit_overrides)"
+    hash="$(set_hash "$image")"
+    mkdir -p "$(dirname "$file")"
+    touch "$file"
+    sed -i "/^$hash /d" "$file"
+    [ "$mode" == "auto" ] && return 0
+    printf '%s %s # %s\n' "$hash" "$mode" "$(basename "$image")" >> "$file"
+}
+# How much of an image we are willing to crop away before padding the rest.
+# Deliberately not a straight function of the mismatch, because the useful
+# signal is what the image was authored for rather than its geometry:
+# 21:9 art is composed edge to edge for wide screens and loses captions and
+# heads to even a small crop, while the 16:9 majority carries a third of a frame
+# in slack sky and ground that nobody misses. So the band that is *closer* to
+# the screen's shape is the one we crop least.
+get_crop_budget() {
+    local img_w="$1" img_h="$2" scr_w="$3" scr_h="$4"
+    if [[ $WALLPAPER_CROP_BUDGET =~ ^[0-9]+$ ]]; then
+        echo "$WALLPAPER_CROP_BUDGET"
+        return 0
+    fi
+    awk -v iw="$img_w" -v ih="$img_h" -v sw="$scr_w" -v sh="$scr_h" \
+        -v wide="${WALLPAPER_CROP_BUDGET_WIDE:-0}" \
+        -v standard="${WALLPAPER_CROP_BUDGET_STANDARD:-15}" \
+        -v tall="${WALLPAPER_CROP_BUDGET_TALL:-10}" \
+        'BEGIN { m = (iw / ih) / (sw / sh); if (m < 1) m = 1 / m
+                 print (m < 1.6) ? wide : (m < 2.2) ? standard : tall }'
+}
 fit_wallpaper() {
-    local image="$1" mode="${2:-ambient}"
+    local image="$1" mode="${2:-ambient}" budget=""
+    # A pinned wallpaper wins over the configured mode. "ambient:0" pins the
+    # mode and its crop budget together, which is the usual reason to pin one.
+    local pinned
+    pinned="$(get_wallpaper_fit_override "$image")"
+    [ -n "$pinned" ] && mode="$pinned"
+    if [[ $mode == *:* ]]; then
+        budget="${mode#*:}"
+        mode="${mode%%:*}"
+    fi
     if [ "$mode" != "ambient" ]; then
         printf '%s\t%s' "$mode" "$image"
         return 0
@@ -454,8 +504,18 @@ fit_wallpaper() {
     blur=$(awk -v iw="$img_w" -v ih="$img_h" -v sw="$scr_w" -v sh="$scr_h" -v b="$base_blur" \
         'BEGIN { m = (iw / ih) / (sw / sh); if (m < 1) m = 1 / m
                  r = int(b * m / 2 + 0.5); if (r < b) r = b; if (r > b * 4) r = b * 4; print r }')
+    # Zoom past a plain fit until we have given up `budget` percent of the
+    # image, then let the ambient backdrop cover whatever is still uncovered.
+    # Capped at the fill scale, past which there would be nothing left to pad.
+    [[ $budget =~ ^[0-9]+$ ]] || budget="$(get_crop_budget "$img_w" "$img_h" "$scr_w" "$scr_h")"
+    local fg_w fg_h
+    read -r fg_w fg_h < <(awk -v iw="$img_w" -v ih="$img_h" -v sw="$scr_w" -v sh="$scr_h" -v b="$budget" \
+        'BEGIN { f = (sw / iw < sh / ih) ? sw / iw : sh / ih
+                 s = (sw / iw > sh / ih) ? sw / iw : sh / ih
+                 z = f / (1 - b / 100); if (z > s) z = s
+                 printf "%d %d\n", iw * z + 0.5, ih * z + 0.5 }')
     local cache_dir="$HYDE_CACHE_HOME/wallpapers/ambient"
-    local cached="$cache_dir/$(set_hash "$image")-${scr_w}x${scr_h}-${blur}-${dim}.jpg"
+    local cached="$cache_dir/$(set_hash "$image")-${scr_w}x${scr_h}-${blur}-${dim}-${budget}.jpg"
     if [ ! -s "$cached" ]; then
         mkdir -p "$cache_dir"
         # The backdrop is blurred at an eighth scale and stretched back up: a
@@ -465,7 +525,8 @@ fit_wallpaper() {
             \( -clone 0 -resize "$((scr_w / 8))x$((scr_h / 8))^" -gravity center \
             -extent "$((scr_w / 8))x$((scr_h / 8))" -blur "0x${blur}" \
             -brightness-contrast "${dim}x-20" -resize "${scr_w}x${scr_h}!" \) \
-            \( -clone 0 -resize "${scr_w}x${scr_h}" \) \
+            \( -clone 0 -resize "${fg_w}x${fg_h}!" -gravity center \
+            -crop "${scr_w}x${scr_h}+0+0" +repage \) \
             -delete 0 -gravity center -composite -quality 95 "$cached" 2> /dev/null; then
             rm -f "$cached"
             printf '%s\t%s' "crop" "$image"
@@ -695,7 +756,7 @@ clamp_col_count() {
     ((count > max)) && count=$max
     printf "%d" "$count"
 }
-export -f get_hyprConf get_monitor_scale clamp_col_count get_wallpaper_fill_color get_rofi_pos is_hovered toml_write get_hashmap get_aurhlpr set_conf set_hash check_package get_themes print_log pkg_installed paste_string extract_thumbnail accepted_mime_types dconf_write send_notifs export_hyde_config wallbash_state_is_complete get_screen_geometry fit_wallpaper
+export -f get_hyprConf get_monitor_scale clamp_col_count get_wallpaper_fill_color get_rofi_pos is_hovered toml_write get_hashmap get_aurhlpr set_conf set_hash check_package get_themes print_log pkg_installed paste_string extract_thumbnail accepted_mime_types dconf_write send_notifs export_hyde_config wallbash_state_is_complete get_screen_geometry fit_wallpaper wallpaper_fit_overrides get_wallpaper_fit_override set_wallpaper_fit_override get_crop_budget
 
 ##
 # Fails the source when the generated-state directories could not be created,
