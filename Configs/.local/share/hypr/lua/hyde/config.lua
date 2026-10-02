@@ -88,6 +88,90 @@ if not ok then
 	toml = nil
 end
 
+-- config.toml -> hyde.config routing.
+--
+-- The current schema nests everything ([desktop.app], [desktop.ui],
+-- [desktop.start], [hyprland.anim], ...) and merges 1:1 onto hyde.config.
+-- The pre-Lua schema put app/ui keys flat under [hyprland] and [desktop] and
+-- had a [hyprland-start] table. Those are routed here so an untouched
+-- config.toml keeps overriding variables.lua exactly as it overrode the .conf
+-- defaults. Precedence, lowest first: variables.lua, [desktop], [hyprland-start],
+-- [hyprland], then the user's hyprland.lua.
+local TOML_APP_KEYS = {
+	browser = true,
+	editor = true,
+	explorer = true,
+	terminal = true,
+	lockscreen = true,
+	quickapps = true
+}
+
+local TOML_UI_KEYS = {
+	hyde_theme = true,
+	gtk_theme = true,
+	icon_theme = true,
+	color_scheme = true,
+	button_layout = true,
+	cursor_theme = true,
+	cursor_size = true,
+	font = true,
+	font_size = true,
+	document_font = true,
+	document_font_size = true,
+	monospace_font = true,
+	monospace_font_size = true,
+	notification_font = true,
+	bar_font = true,
+	menu_font = true,
+	groupbar_font = true,
+	font_antialiasing = true,
+	font_hinting = true,
+	code_theme = true,
+	sddm_theme = true
+}
+
+-- Sub-tables that are already in hyde.config shape; `apps` is an accepted alias of `app`.
+local TOML_SECTION_ALIASES = {apps = "app"}
+
+-- Returns a table shaped like hyde.config for one TOML section ([desktop] or [hyprland]).
+local function route_toml_section(section)
+	local out = {}
+	for k, v in pairs(section) do
+		if type(v) == "table" and next(v) ~= nil and type(next(v)) == "string" then
+			-- nested table: already hyde.config shaped (app, ui, start, anim, window, ...)
+			local name = TOML_SECTION_ALIASES[k] or k
+			out[name] = out[name] or {}
+			merge_config(out[name], v)
+		elseif TOML_APP_KEYS[k] then
+			out.app = out.app or {}
+			out.app[k] = v
+		elseif TOML_UI_KEYS[k] or (type(hyde.config.ui) == "table" and hyde.config.ui[k] ~= nil) then
+			out.ui = out.ui or {}
+			out.ui[k] = v
+		else
+			-- scalars and arrays that have no nested home (bar, background_path, ...)
+			out[k] = v
+		end
+	end
+	return out
+end
+
+function hyde.config.route_toml(data)
+	if type(data) ~= "table" then
+		return hyde.config
+	end
+	if type(data.desktop) == "table" then
+		hyde.config.apply(route_toml_section(data.desktop))
+	end
+	if type(data["hyprland-start"]) == "table" then
+		hyde.config.apply({start = data["hyprland-start"]})
+	end
+	if type(data.hyprland) == "table" then
+		hyde.config.apply(route_toml_section(data.hyprland))
+	end
+	return hyde.config
+end
+
 function hyde.config.load_toml(filename)
 	if type(toml) ~= "table" or type(toml.parse) ~= "function" then
 		-- error("TOML parser not available")
@@ -98,24 +182,7 @@ function hyde.config.load_toml(filename)
 		error("Failed to parse TOML: " .. tostring(data))
 	end
 
-	if type(data) ~= "table" then
-		return hyde.config
-	end
-
-	local desktop = data.desktop
-	if type(desktop) == "table" then
-		if type(desktop.apps) == "table" and desktop.app == nil then
-			desktop.app = desktop.apps
-		end
-		hyde.config.apply(desktop)
-	end
-
-	local hyprland = data.hyprland
-	if type(hyprland) == "table" then
-		hyde.config.apply(hyprland)
-	end
-
-	return hyde.config
+	return hyde.config.route_toml(data)
 end
 
 local default_config = {

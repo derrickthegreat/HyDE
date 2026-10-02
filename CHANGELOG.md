@@ -38,6 +38,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Installer: `theme.switch.sh` no longer fails with "HyDE: command not found" during `install.sh -r` by sourcing `globalcontrol.sh` directly when `hyde-shell init` is unavailable
 - Dependencies: removed unreliable version constraint `hyprquery>=0.6.8.r11`. Advise users to update `yay -Sy hyprquery`.
 - Wallpaper: `theme.switch.sh` no longer hangs forever when the awww/swww daemon is running but unresponsive. The daemon health-check (`<backend> query`, and `<backend> restore` after a restart) ran as a plain foreground call with no bound, unlike the apply command it precedes; a stalled daemon left it blocking indefinitely. It is now wrapped in `timeout`, the same treatment the apply command already had.
+- Hyprland: 'config.toml' overrides are honoured by the Lua config again. Flat '[hyprland]' / '[desktop]' keys
+  (browser, editor, terminal, fonts, cursor, ...) and the old '[hyprland-start]' table are routed onto
+  'hyde.config.app', 'hyde.config.ui' and 'hyde.config.start', matching how they overrode the .conf defaults.
+  App keys are executed as written, so 'browser = "firefox-developer-edition"' launches that binary directly.
+  Precedence, lowest first: variables.lua, [desktop], [hyprland-start], [hyprland], then ~/.config/hypr/hyprland.lua.
 
 ### Fixed
 - Waybar: honor an optional `$WAYBAR_LAYOUT` in `hypr.theme` during color/theme updates, selecting the layout and matching stylesheet temporarily. Restore the previous layout and independently selected CSS when leaving themes with a preset, preserving them across repeated updates and preset-to-preset switches. Fix theme setting lookup for names containing spaces such as `Mac OS`.
