@@ -1159,32 +1159,32 @@
                     "properties": {
                         "quickapps": {
                             "default": "kitty",
-                            "description": "Command used for quickapps.",
+                            "description": "Command used for quickapps. Executed as written.",
                             "type": "string"
                         },
                         "browser": {
                             "default": "hyde-shell open --fall firefox web-browser",
-                            "description": "Browser launcher command.",
+                            "description": "Browser launcher command. Executed as written.",
                             "type": "string"
                         },
                         "editor": {
                             "default": "hyde-shell open --fall code-oss code-editor",
-                            "description": "Editor launcher command.",
+                            "description": "Editor launcher command. Executed as written.",
                             "type": "string"
                         },
                         "explorer": {
                             "default": "hyde-shell open --fall dolphin file-manager",
-                            "description": "File manager launcher command.",
+                            "description": "File manager launcher command. Executed as written.",
                             "type": "string"
                         },
                         "terminal": {
                             "default": "hyde-shell app -T",
-                            "description": "Terminal launcher command.",
+                            "description": "Terminal launcher command. Executed as written.",
                             "type": "string"
                         },
                         "lockscreen": {
                             "default": "hyde-shell lock-session",
-                            "description": "Lockscreen command.",
+                            "description": "Lockscreen command. Executed as written.",
                             "type": "string"
                         }
                     }

@@ -36,7 +36,7 @@ action = "sync"
 source_root = "Configs/.local/share"
 target_root = "${XDG_DATA_HOME}"
 paths = ["hyde", "wallbash", "xdg-desktop-portal/hyprland-portals.conf"]
-ignored_paths = [".*", "__pycache__", "schema"]
+ignored_paths = [".*", "__pycache__"]
 
 [[hyde.files]]
 action = "sync"

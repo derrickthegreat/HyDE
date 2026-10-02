@@ -43,6 +43,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   'hyde.config.app', 'hyde.config.ui' and 'hyde.config.start', matching how they overrode the .conf defaults.
   App keys are executed as written, so 'browser = "firefox-developer-edition"' launches that binary directly.
   Precedence, lowest first: variables.lua, [desktop], [hyprland-start], [hyprland], then ~/.config/hypr/hyprland.lua.
+- Install: 'install.sh' passes '--rebuild' to deez-dots so a re-run re-bundles from the checkout instead of
+  reusing a cached bundle from a previous install (the cache is keyed on the Hyprland version, which rarely changes,
+  so updated Lua files were never shipped).
+- Install: '~/.local/share/hyde/schema' is deployed again, so the installed reference config.toml and docs match the release.
+- Config: the shipped '~/.config/hyde/config.toml' documents the '[desktop.app]' keys (browser, editor, explorer, terminal).
 
 ### Fixed
 - Waybar: honor an optional `$WAYBAR_LAYOUT` in `hypr.theme` during color/theme updates, selecting the layout and matching stylesheet temporarily. Restore the previous layout and independently selected CSS when leaving themes with a preset, preserving them across repeated updates and preset-to-preset switches. Fix theme setting lookup for names containing spaces such as `Mac OS`.

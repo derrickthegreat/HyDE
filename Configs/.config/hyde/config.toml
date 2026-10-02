@@ -1,4 +1,15 @@
 # Configuration file for HyDE
 # Environment variables should be on top
-# Updated config.toml file can be found at $HOME/.local/share/hyde/config.toml
+# The full reference with every key and its default lives at
+#   $HOME/.local/share/hyde/schema/config.toml  (docs: config.md next to it)
 "$schema" = "https://raw.githubusercontent.com/HyDE-Project/HyDE/refs/heads/master/Configs/.local/share/hyde/schema/config.toml.json"
+
+# Default applications used by the Super+B / Super+C / Super+E / Super+T keybinds.
+# Values are executed as written, so a bare binary name launches that binary.
+# Leave a key commented to keep HyDE's default (xdg default app with a fallback).
+# The older flat form ([hyprland] browser = "...") is still accepted.
+# [desktop.app]
+# browser = "firefox-developer-edition"
+# editor = "zeditor"
+# explorer = "dolphin"
+# terminal = "kitty"

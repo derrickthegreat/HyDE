@@ -110,12 +110,12 @@ Desktop application launcher defaults.
 
 | Key | Description | Default |
 | --- | ----------- | ------- |
-| browser | Browser launcher command. | hyde-shell open --fall firefox web-browser |
-| editor | Editor launcher command. | hyde-shell open --fall code-oss code-editor |
-| explorer | File manager launcher command. | hyde-shell open --fall dolphin file-manager |
-| lockscreen | Lockscreen command. | hyde-shell lock-session |
-| quickapps | Command used for quickapps. | kitty |
-| terminal | Terminal launcher command. | hyde-shell app -T |
+| browser | Browser launcher command. Executed as written. | hyde-shell open --fall firefox web-browser |
+| editor | Editor launcher command. Executed as written. | hyde-shell open --fall code-oss code-editor |
+| explorer | File manager launcher command. Executed as written. | hyde-shell open --fall dolphin file-manager |
+| lockscreen | Lockscreen command. Executed as written. | hyde-shell lock-session |
+| quickapps | Command used for quickapps. Executed as written. | kitty |
+| terminal | Terminal launcher command. Executed as written. | hyde-shell app -T |
 
 ### [desktop.ui]
 

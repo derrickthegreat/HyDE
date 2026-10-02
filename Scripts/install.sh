@@ -486,13 +486,13 @@ EOF
 		# shape, so they are exactly what should still run. The failure is
 		# carried to the end of the restore and reported there.
 		print_log -g "[DEEZ-DOTS] " -b "deploy :: " "Installing core dotfiles..."
-		"${deez_exe}" --source "${cloneDir}" --config "${installDir}/dots-groups/core.toml" dots --skip-git --deploy all || {
+		"${deez_exe}" --source "${cloneDir}" --config "${installDir}/dots-groups/core.toml" dots --skip-git --rebuild --deploy all || {
 			print_log -err "[DEEZ-DOTS] " -crit "ERROR" "Core dotfiles deployed with failures"
 			deploy_failed=1
 		}
 
 		print_log -g "[DEEZ-DOTS] " -b "deploy :: " "Installing extra dotfiles..."
-		"${deez_exe}" --source "${cloneDir}" --config "${installDir}/dots-groups/extra.toml" dots --skip-git --deploy || {
+		"${deez_exe}" --source "${cloneDir}" --config "${installDir}/dots-groups/extra.toml" dots --skip-git --rebuild --deploy || {
 			print_log -err "[DEEZ-DOTS] " -crit "ERROR" "Extra dotfiles deployed with failures"
 			deploy_failed=1
 		}

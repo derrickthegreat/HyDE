@@ -278,12 +278,12 @@ sddm_theme = ""  # sddm theme used by HyDE.
 
 # Desktop application launcher defaults.
 [desktop.app]
-quickapps = "kitty"  # Command used for quickapps.
-browser = "hyde-shell open --fall firefox web-browser"  # Browser launcher command.
-editor = "hyde-shell open --fall code-oss code-editor"  # Editor launcher command.
-explorer = "hyde-shell open --fall dolphin file-manager"  # File manager launcher command.
-terminal = "hyde-shell app -T"  # Terminal launcher command.
-lockscreen = "hyde-shell lock-session"  # Lockscreen command.
+quickapps = "kitty"  # Command used for quickapps. Executed as written.
+browser = "hyde-shell open --fall firefox web-browser"  # Browser launcher command. Executed as written.
+editor = "hyde-shell open --fall code-oss code-editor"  # Editor launcher command. Executed as written.
+explorer = "hyde-shell open --fall dolphin file-manager"  # File manager launcher command. Executed as written.
+terminal = "hyde-shell app -T"  # Terminal launcher command. Executed as written.
+lockscreen = "hyde-shell lock-session"  # Lockscreen command. Executed as written.
 
 
 # Qt5 configuration.
