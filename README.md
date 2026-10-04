@@ -9,6 +9,12 @@
 
 ![hyde_banner](Source/assets/hyde_banner.png)
 
+> [!NOTE]
+> This is an independently maintained fork of [HyDE-Project/HyDE](https://github.com/HyDE-Project/HyDE).
+> It tracks Hyprland releases on its own schedule, has a single `main` branch, and carries fixes
+> upstream has not taken. Upstream's wiki, Discord and theme gallery links below still point at
+> the original project. See [CONTRIBUTING.md](CONTRIBUTING.md) for how this fork is run.
+
 <!--
 Multi-language README support
 -->
@@ -90,7 +96,7 @@ To install, execute the following commands:
 
 ```shell
 sudo pacman -S --needed git base-devel
-git clone --depth 1 https://github.com/HyDE-Project/HyDE ~/HyDE
+git clone --depth 1 https://github.com/derrickthegreat/HyDE ~/HyDE
 cd ~/HyDE/Scripts
 ./install.sh
 ```
@@ -140,9 +146,7 @@ Quick checklist for Arch-based distros such as BigLinux / Manjaro:
 
 We welcome contributions from the community! To get started:
 
-- Check our [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines
-- Read about team roles in [TEAM_ROLES.md](TEAM_ROLES.md)
-- Review our release process in [RELEASE_POLICY.md](RELEASE_POLICY.md)
+- Check [CONTRIBUTING.md](CONTRIBUTING.md) for the workflow and how upstream changes are pulled in
 - Add yourself to [CONTRIBUTORS.md](CONTRIBUTORS.md) when making your first PR
 
 Whether you're helping with code, testing, or documentation, we appreciate your support in making HyDE better for everyone. Thank you!
@@ -198,17 +202,15 @@ HyDEVM is a script that allows you to run HyDE in a virtual machine for testing 
 ### Arch Linux
 
 ```bash
-# Download and run (will auto-detect missing packages)
-curl -L https://raw.githubusercontent.com/HyDE-Project/HyDE/main/Scripts/hydevm/hydevm.sh -o hydevm
-chmod +x hydevm
-./hydevm
+# From a clone of this repository (will auto-detect missing packages)
+./Scripts/hydevm/hydevm.sh
 ```
 
 ### NixOS (or Nix)
 
 ```bash
 # Using flakes from HyDE repository
-nix run github:HyDE-Project/HyDE
+nix run github:derrickthegreat/HyDE
 
 # Or if you have the repository cloned locally
 nix run .
@@ -303,13 +305,6 @@ For more information, visit [HyDE-Project/hyde-themes](https://github.com/HyDE-P
 <img src="https://raw.githubusercontent.com/prasanthrangan/hyprdots/main/Source/assets/game_launch_5.png"/></td></tr></table></div>
 
 
-
-<a id="star_history"></a>
-<img src="https://readme-typing-svg.herokuapp.com?font=Lexend+Giga&size=25&pause=1000&color=CCA9DD&vCenter=true&width=435&height=25&lines=STARS" width="450"/>
-                        
-[![Stargazers over time](https://starchart.cc/HyDE-Project/HyDE.svg?background=%231f2226&axis=%23ebbcba&line=%23c79bf0)](https://starchart.cc/HyDE-Project/HyDE)
-
-                    
 
 ---
 

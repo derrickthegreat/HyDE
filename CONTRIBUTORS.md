@@ -1,14 +1,18 @@
 # Contributors
 
-This file lists the contributors to the HyDE project and their roles.
+## This fork
 
-## Project Maintainers
+- [@derrickthegreat](https://github.com/derrickthegreat) - maintainer
+
+## Upstream
+
+This fork is built on [HyDE-Project/HyDE](https://github.com/HyDE-Project/HyDE). The people below built the project it started from; the list is kept as credit and is not maintained here. See upstream's `CONTRIBUTORS.md` for the current roster.
+
+### Project Maintainers
 
 - [@kRHYME7](https://github.com/kRHYME7) - "[3]uck 🦆"
 
-## Collaborators
-
-_These contributors help with code review, triaging, and development._
+### Collaborators
 
 - [@dieBakterie](https://github.com/dieBakterie)
 - [@richen604](https://github.com/richen604)
@@ -21,26 +25,9 @@ _These contributors help with code review, triaging, and development._
 - [@heeeeeeeeeeh](https://github.com/heeeeeeeeeeh/)
 - [@0xGeN02](https://github.com/0xGeN02)
 
-## Testers
-
-_These contributors help with quality assurance and testing._
+### Testers
 
 - [@amit-0i](https://github.com/amit-0i)
 - [@Prof-Shiba](https://github.com/Prof-Shiba)
 - [@UnaTried](https://github.com/UnaTried)
 - [@Vu4ll](https://github.com/Vu4ll)
----
-
-## How to add yourself to this list
-
-1. Fork the repository
-2. Create a new branch for your change
-3. Add your name to the appropriate section in this format:
-   ```
-   - [@your-github-username](https://github.com/your-github-username) - "Your favorite quote"
-   ```
-4. Submit a pull request with the title "Add [Your Name] as [Collaborator/Tester]"
-5. Include in the PR description your relevant experience and what you hope to contribute
-6. Wait for a maintainer to review and merge your PR
-
-Note: New contributors should only add themselves to the Collaborators or Testers sections. Promotion to write access is determined by project maintainers based on the criteria in [TEAM_ROLES.md](https://github.com/HyDE-Project/HyDE/blob/master/TEAM_ROLES.md).
