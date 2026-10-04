@@ -166,3 +166,24 @@ hl.bind(
 	hl.dsp.exec_cmd(hyde.sh.screenshot.full()),
 	{ description = "[Utilities] print all monitors", locked = true }
 )
+-- ============================================================================
+-- Super + T opens a floating, centred terminal. On a 32:9 panel the stock bind
+-- tiles kitty across the whole width, and dragging a tiled window only swaps
+-- it with its neighbour. The terminal gets its own app id so terminals opened
+-- any other way (file manager, scripts, the dropdown) still tile as before.
+-- Super + middle-click toggles it back into the tiling grid when wanted.
+-- ============================================================================
+
+hl.window_rule({
+	name = "hyde_terminal_float",
+	match = { class = "^(hyde-terminal)$" },
+	float = true,
+	center = true,
+	size = { "35%", "70%" }, -- a table: Hyprland's Lua API ignores the "W H" string form
+})
+
+hl.bind(
+	MOD .. " + T",
+	hl.dsp.exec_cmd("hyde-shell app -- kitty --class hyde-terminal"),
+	{ description = "[Launcher|Apps] terminal emulator (floating)" }
+)
