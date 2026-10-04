@@ -202,8 +202,10 @@ HyDEVM is a script that allows you to run HyDE in a virtual machine for testing 
 ### Arch Linux
 
 ```bash
-# From a clone of this repository (will auto-detect missing packages)
-./Scripts/hydevm/hydevm.sh
+# Download and run (will auto-detect missing packages)
+curl -L https://raw.githubusercontent.com/derrickthegreat/HyDE/main/Scripts/hydevm/hydevm.sh -o hydevm
+chmod +x hydevm
+./hydevm
 ```
 
 ### NixOS (or Nix)
