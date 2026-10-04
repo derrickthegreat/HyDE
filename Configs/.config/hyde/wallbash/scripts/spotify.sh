@@ -33,6 +33,8 @@ configure_spicetify() {
     
     spicetify_themes_dir="$HOME/.config/spicetify/Themes"
     if [ ! -d "${spicetify_themes_dir}/Sleek" ]; then
+        # Fetched from upstream: this repository is private, so a raw download from it would need a token.
+        # The same archive is in the clone at Source/arcs/Spotify_Sleek.tar.gz.
         curl -L -o "${cache_dir}/landing/Spotify_Sleek.tar.gz" "https://github.com/HyDE-Project/HyDE/raw/master/Source/arcs/Spotify_Sleek.tar.gz"
         tar -xzf "${cache_dir}/landing/Spotify_Sleek.tar.gz" -C "$spicetify_themes_dir"
     fi
