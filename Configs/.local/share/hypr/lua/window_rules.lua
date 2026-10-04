@@ -124,7 +124,7 @@ hl.window_rule(
     },
     float = true,
     move = "(monitor_w*0.73) (monitor_h*0.72)",
-    size = {"25%", "25%"},
+    size = "(monitor_w*0.25) (monitor_h*0.25)",
     pin = true,
 	opacity = "1.0"
   }
