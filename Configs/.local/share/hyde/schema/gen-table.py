@@ -113,7 +113,7 @@ def generate_markdown_table(toml_file_path):
         "",
         "Users are encouraged to use an editor that support schema validation to ensure the configuration file is valid.",
         "```toml",
-        "\"$schema\" = \"https://raw.githubusercontent.com/HyDE-Project/HyDE/refs/heads/master/Configs/.local/share/hyde/schema/config.toml.json\"",
+        "\"$schema\" = \"https://raw.githubusercontent.com/derrickthegreat/HyDE/refs/heads/main/Configs/.local/share/hyde/schema/config.toml.json\"",
         "```",
         "---",
     ]
