@@ -42,3 +42,13 @@ end
 -- The full reference is KEYBINDINGS.md in the HyDE repository.
 --
 -- Other Lua files next to this one can be pulled in with require("name").
+--
+-- Monitors. HyDE picks sane defaults for whatever is plugged in, so set these
+-- only when the default is wrong. One entry per output; `output = ""` is the
+-- catch-all. See https://wiki.hyprland.org/Configuring/Monitors/ for fields.
+--
+--     hl.monitor({ output = "", mode = "preferred", position = "auto", scale = "auto" })
+--     hl.monitor({ output = "DP-1", mode = "5120x1440@240", position = "0x0", scale = 1 })
+--
+-- A fuller example, including monitor colour management, window rules and
+-- rebound keys, is at Source/examples/hyprland.lua in the HyDE repository.
