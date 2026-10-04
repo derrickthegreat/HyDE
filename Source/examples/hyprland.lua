@@ -179,8 +179,33 @@ hl.window_rule({
 	match = { class = "^(hyde-terminal)$" },
 	float = true,
 	center = true,
-	size = { "35%", "70%" }, -- a table: Hyprland's Lua API ignores the "W H" string form
+	-- kitty asks to be maximised right after it maps (it remembers the size
+	-- of the last, tiled, window), and Hyprland honours that for a floating
+	-- window. Ignore the request so the size below sticks.
+	suppress_event = "maximize",
 })
+
+-- Size it to 35% x 70% of the monitor's usable area once it has mapped. A
+-- `size` on the rule would be simpler, but from a config file only absolute
+-- pixel sizes are honoured; "35%" is ignored there and kitty's own requested
+-- size wins. Doing it at open time keeps the file monitor-independent.
+hl.on("window.open", function(win)
+	if not win or win.class ~= "hyde-terminal" then
+		return
+	end
+	local mon = hyde.get_logical_monitor()
+	if not mon then
+		return
+	end
+	local usable_w = (mon.w - (mon.res.left + mon.res.right)) * mon.inv_scale
+	local usable_h = (mon.h - (mon.res.top + mon.res.bottom)) * mon.inv_scale
+	local w, h = math.floor(usable_w * 0.35), math.floor(usable_h * 0.7)
+	hl.dispatch(hl.dsp.window.resize({ window = win, x = w, y = h, exact = true }))
+	local cx = mon.x + (mon.res.left * mon.inv_scale) + (usable_w - w) / 2
+	local cy = mon.y + (mon.res.top * mon.inv_scale) + (usable_h - h) / 2
+	hl.dispatch(hl.dsp.window.move({ window = win, x = math.floor(cx), y = math.floor(cy), exact = true }))
+end)
+
 
 hl.bind(
 	MOD .. " + T",
