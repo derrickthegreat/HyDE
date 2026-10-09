@@ -1,6 +1,6 @@
 {
     "custom/theme": {
-        "format": "{0}",
+        "format": " {0}",
         "rotate": 0,
         "tooltip-format": "\udb81\udfe1 Switch theme",
         "on-click": "hyde-shell app -t scope -- theme.switch.sh -n",

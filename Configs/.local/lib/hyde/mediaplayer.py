@@ -70,8 +70,10 @@ def create_tooltip_text(
     tooltip = ""
 
     if artist or track:
-        tooltip += f'<span foreground="{track_color}"><b>{track}</b></span>'
-        tooltip += f'\n<span foreground="{artist_color}"><i>{artist}</i></span>\n'
+        tooltip += f'<span foreground="{track_color}"><b>{track}</b></span>\n'
+        # Browser video and some players report no artist; skip the empty line
+        if artist:
+            tooltip += f'<span foreground="{artist_color}"><i>{artist}</i></span>\n'
         if duration_seconds > 0:
             progress = int((current_position_seconds / duration_seconds) * 20)
             bar = f'<span foreground="{progress_color}">{"━" * progress}</span><span foreground="{empty_color}">{"─" * (20 - progress)}</span>'
@@ -346,6 +348,13 @@ def signal_handler(sig, frame):
     sys.exit(0)
 
 
+def on_stop_signal(loop):
+    """GLib dispatches this from the main loop, so it runs even while the loop waits in C."""
+    logger.debug("Received signal to stop, exiting")
+    loop.quit()
+    return GLib.SOURCE_REMOVE
+
+
 def parse_arguments():
     """
     The options for prefix/paused/max_length/standby_text are loaded from env variables.
@@ -433,8 +442,8 @@ def main():
     )
     manager.connect("player-vanished", lambda *args: on_player_vanished(*args, loop))
 
-    signal.signal(signal.SIGINT, signal_handler)
-    signal.signal(signal.SIGTERM, signal_handler)
+    for stop_signal in (signal.SIGINT, signal.SIGTERM):
+        GLib.unix_signal_add(GLib.PRIORITY_HIGH, stop_signal, on_stop_signal, loop)
     signal.signal(signal.SIGPIPE, signal_handler)
 
     found = [None] * len(players)
@@ -476,6 +485,9 @@ def main():
     else:
         manager._polling = False
     loop.run()
+    sys.stdout.write("\n")
+    sys.stdout.flush()
+    logging.shutdown()
 
 
 def set_player(manager, player):

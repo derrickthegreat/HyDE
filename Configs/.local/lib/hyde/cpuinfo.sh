@@ -78,7 +78,9 @@ my @lines;
 for my $chip (@chips) {
     next unless exists $data->{$chip} && ref $data->{$chip} eq "HASH";
     my $entries = $data->{$chip};
-    for my $label (keys %$entries) {
+    # Package-level readings first so the headline temperature is stable, then the rest by name
+    my $rank = sub { $_[0] =~ /^(Package id|Tctl|Tdie)/ ? 0 : 1 };
+    for my $label (sort { $rank->($a) <=> $rank->($b) || $a cmp $b } keys %$entries) {
         my $obj = $entries->{$label};
         next unless ref $obj eq "HASH";
         my $temp;
@@ -103,26 +105,46 @@ fi
 utilization=$(get_utilization)
 frequency=$(perl -ne 'BEGIN { $sum = 0; $count = 0 } if (/cpu MHz\s+:\s+([\d.]+)/) { $sum += $1; $count++ } END { if ($count > 0) { printf "%.2f\n", $sum / $count } else { print "NaN\n" } }' /proc/cpuinfo)
 
-# Numeric classes and percentage for Waybar formatting
-temp_val=${temperature%%.*}
-((temp_val < 0)) && temp_val=0
-((temp_val > 999)) && temp_val=999
-temp_bucket=$(((temp_val / 5) * 5))
-((temp_bucket > 100)) && temp_bucket=100
-temp_class="temp-$temp_bucket"
+# Glyphs by level, same scheme as gpuinfo.sh: thermometer for temperature, gauge for utilization
+temp_lv="85:, 65:, 45:, "
+util_lv="90:, 60:󰓅, 30:󰾅, 󰾆"
+thermo=$(map_floor "$temp_lv" "$temperature")
+speedo=$(map_floor "$util_lv" "$utilization")
 
+# Numeric classes and percentage for Waybar formatting
 util_val=${utilization%.*}
 ((${util_val:-0} < 0)) && util_val=0
 ((${util_val:-0} > 100)) && util_val=100
 util_bucket=$(((util_val / 10) * 10))
 util_class="util-$util_bucket"
 
-temp_pct=$temp_val
-((temp_pct > 100)) && temp_pct=100
-tooltip_str="$CPUINFO_MODEL\n"
-tooltip_str+="Temperature: \n\t$cpu_temps \n"
-tooltip_str+="Utilization: $utilization%\n"
-tooltip_str+="Clock Speed: $frequency/$CPUINFO_MAX_FREQ MHz"
+tooltip_str=" $CPUINFO_MODEL"
+if [[ -n $temperature ]]; then
+    temp_val=${temperature%%.*}
+    ((temp_val < 0)) && temp_val=0
+    ((temp_val > 999)) && temp_val=999
+    temp_bucket=$(((temp_val / 5) * 5))
+    ((temp_bucket > 100)) && temp_bucket=100
+    temp_class="temp-$temp_bucket"
+    temp_pct=$((temp_val > 100 ? 100 : temp_val))
+    text="$thermo $temperature°C"
+    tooltip_str+="\n$thermo Temperature: $temperature°C"
+    # List every sensor when the chip reports more than one (e.g. Tctl plus each CCD)
+    [[ $cpu_temps == *'\n'* ]] && tooltip_str+="\n\t$cpu_temps"
+else
+    # Only coretemp, k10temp and zenpower are read; VMs and other chips have none of them
+    temp_bucket=0
+    temp_class="no-sensor"
+    temp_pct=0
+    text="$speedo"
+    tooltip_str+="\n$thermo Temperature: no supported sensor"
+fi
+tooltip_str+="\n$speedo Utilization: $utilization%"
+if [[ $frequency != "NaN" ]]; then
+    clock="$frequency MHz"
+    [[ -n $CPUINFO_MAX_FREQ ]] && clock="$frequency/$CPUINFO_MAX_FREQ MHz"
+    tooltip_str+="\n Clock Speed: $clock"
+fi
 cat <<JSON
-{"text":"$temperature°C", "tooltip":"$tooltip_str", "class":["$temp_class","$util_class"], "percentage":$temp_pct, "alt":"$temp_bucket"}
+{"text":"$text", "tooltip":"$tooltip_str", "class":["$temp_class","$util_class"], "percentage":$temp_pct, "alt":"$temp_bucket"}
 JSON

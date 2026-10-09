@@ -18,7 +18,7 @@
   "backlight#eyecare": {
     "format": "<span size='large'>{icon}</span>",
     "format-icons": ["", "", "", "", "", "", "", "", ""],
-    "on-click": "hyde-shell hyprsunset -t -P waybar:19",
+    "on-click": "hyde-shell hyprsunset -t -P waybar:22",
     "on-scroll-up": "hyde-shell brightnesscontrol i 1",
     "on-scroll-down": "hyde-shell brightnesscontrol d 1",
     "tooltip": true,

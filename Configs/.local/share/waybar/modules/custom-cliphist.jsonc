@@ -1,6 +1,6 @@
 {
     "custom/cliphist": {
-        "format": "{0} ",
+        "format": " {0}",
         "rotate": 0,
         "tooltip-format": "\udb80\udd47 Clipboard history",
         "on-click": "sleep 0.1 && hyde-shell cliphist -c",

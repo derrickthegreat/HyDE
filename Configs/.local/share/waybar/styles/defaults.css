@@ -276,6 +276,40 @@ window.popup decoration {
     background-color: transparent;
 }
 
+/* Same colours as the 60°C and 80°C steps in classes/cpuinfo.css */
+#temperature.warning {
+    color: #ffa500;
+}
+
+#temperature.critical {
+    color: #d22f2f;
+}
+
+/* Battery levels from "states" in battery.jsonc, left alone while charging */
+#battery.warning:not(.charging) {
+    background-color: @wb-act-bg;
+    color: @wb-act-fg;
+}
+
+#battery.critical:not(.charging) {
+    background-color: @wb-act-bg;
+    color: @wb-act-fg;
+    animation: battery_critical 1s ease-in-out infinite alternate;
+}
+
+@keyframes battery_critical {
+    to {
+        background-color: transparent;
+        color: @main-fg;
+    }
+}
+
+/* Weather kept from before wttr.in failed, or no reading at all */
+#custom-weather.stale,
+#custom-weather.error {
+    opacity: 0.6;
+}
+
 menu {
     background-color: @main-bg;
 }

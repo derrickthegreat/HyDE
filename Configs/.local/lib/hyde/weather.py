@@ -6,6 +6,7 @@ import json
 from datetime import datetime
 from pathlib import Path
 import locale
+import time
 from typing import TypeAlias, TypedDict, Literal, cast
 
 import requests
@@ -356,6 +357,38 @@ def print_weather_unavailable() -> None:
     print(json.dumps({"text": "Weather --", "tooltip": "Weather unavailable: wttr.in did not return usable data", "class": "error"}))
 
 
+def cache_path() -> Path:
+    return Path(os.getenv("XDG_CACHE_HOME") or Path.home() / ".cache") / "hyde" / "weather.json"
+
+
+def save_cache(url: str, data: dict[str, str]) -> None:
+    """Keep the last good reading so a failed refresh can still show something."""
+    try:
+        path = cache_path()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps({"url": url, "time": time.time(), "data": data}))
+    except OSError:
+        pass
+
+
+def print_cached_or_unavailable(url: str) -> None:
+    """Show the last good reading for the same request, marked stale, or say it's unavailable."""
+    try:
+        cached = json.loads(cache_path().read_text())
+        if cached["url"] != url:
+            raise ValueError("cached reading is for another location or language")
+        data: dict[str, str] = cached["data"]
+        fetched = datetime.fromtimestamp(cached["time"])
+    except (OSError, ValueError, KeyError, TypeError):
+        print_weather_unavailable()
+        return
+    clock = "%H:%M" if time_format == "24h" else "%I:%M %p"
+    as_of = fetched.strftime(clock if fetched.date() == datetime.now().date() else f"%b %d {clock}")
+    data["tooltip"] = f"<i>wttr.in is unreachable, showing data as of {as_of}</i>\n\n" + data["tooltip"]
+    data["class"] = "stale"
+    print(json.dumps(data))
+
+
 def main() -> None:
     global weather_lang, temp_unit, time_format, windspeed_unit
 
@@ -424,11 +457,11 @@ def main() -> None:
     headers = {"User-Agent": "Mozilla/5.0"}
     weather = get_weather_data(url, headers)
     if weather is None:
-        print_weather_unavailable()
+        print_cached_or_unavailable(url)
         sys.exit(0)
     current_conditions = weather.get("current_condition")
     if not current_conditions:
-        print_weather_unavailable()
+        print_cached_or_unavailable(url)
         sys.exit(0)
     current_weather = current_conditions[0]
 
@@ -459,8 +492,8 @@ def main() -> None:
         if i == 1:
             data["tooltip"] += "Tomorrow, "
         data["tooltip"] += f"{day_instance['date']}</b>\n"
-        data["tooltip"] += f"⬆️ {get_max_temp(day_instance)} ⬇️ {get_min_temp(day_instance)} "
-        data["tooltip"] += f"🌅 {get_sunrise(day_instance)} 🌇 {get_sunset(day_instance)}\n"
+        data["tooltip"] += f"󰸃 {get_max_temp(day_instance)} 󰸂 {get_min_temp(day_instance)} "
+        data["tooltip"] += f"󰖜 {get_sunrise(day_instance)} 󰖛 {get_sunset(day_instance)}\n"
         # Get the hourly forecast for the day
         for hour in day_instance["hourly"]:
             if i == 0:
@@ -470,6 +503,7 @@ def main() -> None:
                 f"{format_time(hour['time'])} {get_weather_icon(hour)} {format_temp(get_temperature_hour(hour))} {get_description(hour)}, {format_chances(hour)}\n"
             )
 
+    save_cache(url, data)
     print(json.dumps(data))
 
 

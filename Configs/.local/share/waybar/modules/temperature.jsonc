@@ -1,9 +1,10 @@
 {
   // ===============================================================================
-  // WAYBAR TEMPERATURE MODULES CONFIGURATION // Best for laptops
+  // WAYBAR TEMPERATURE MODULES CONFIGURATION
   // ===============================================================================
   //
-  // IMPORTANT: This module configuration is DEVICE SPECIFIC but worth the manual setup!
+  // The modules at the bottom work on common hardware; check them against your own with
+  // the steps below if a reading looks wrong.
   //
   // WHY USE thermal-zone INSTEAD OF custom/cpuinfo and custom/gpuinfo:
   // - FASTER: Direct kernel thermal zone access (no subprocess overhead)
@@ -12,11 +13,11 @@
   // - CLEANER: No dependency on external tools (sensors, nvidia-smi, etc.)
   //
   // REPLACES these custom modules with better performance:
-  // - custom/cpuinfo    -> temperature#27 (thermal-zone method)
-  // - custom/gpuinfo    -> temperature#2  (thermal-zone method)
-  // - custom/sensorsinfo -> temperature#0  (thermal-zone method)
+  // - custom/cpuinfo    -> temperature#27 (hwmon-path-abs)
+  // - custom/gpuinfo    -> temperature#2  (hwmon-path-abs, AMD and Intel GPUs)
+  // - custom/sensorsinfo -> temperature#0  (thermal-zone)
   //
-  // SETUP REQUIRED: Follow the instructions below to identify YOUR thermal zones!
+  // To use other sensors, follow the instructions below to identify yours.
   // ===============================================================================
   //
   // HOW TO IDENTIFY YOUR THERMAL ZONES:
@@ -92,66 +93,51 @@
   //
   // DOCUMENTATION: https://man.archlinux.org/man/waybar-temperature.5.en
   // ===============================================================================
-  // ? Below are the configurations for my laptop // only use as a reference!
-  // GPU Temperature Monitor (NVIDIA via thermal zone)
+  // The modules below find their sensor by device path, which stays the same across
+  // reboots (hwmonN numbers don't); each path list is tried in order. The #suffixes
+  // are only names, kept so layouts that already use them keep working.
+  // Warning and critical colours come from styles/defaults.css.
+  //
+  // GPU Temperature Monitor (AMD and Intel GPUs; NVIDIA's driver exposes no hwmon sensor)
   "temperature#2": {
-    "thermal-zone": 2, // SEN1 - NVIDIA GPU on this system
-    "hwmon-path": [
-        "/sys/class/thermal/thermal_zone3/temp",
-        "/sys/class/thermal/thermal_zone14/temp",
-        "/sys/class/thermal/thermal_zone5/temp"
+    "hwmon-path-abs": [
+      "/sys/class/drm/card0/device/hwmon",
+      "/sys/class/drm/card1/device/hwmon"
     ],
-    // Temperature thresholds for GPU
-    "critical-threshold": 65, // NVIDIA typical max temp
-    "warning-threshold": 55, // Start warning at 75°C
-    // Update frequency
+    "input-filename": "temp1_input", // amdgpu: edge temperature
+    "warning-threshold": 75,
+    "critical-threshold": 90,
     // "interval": 2,
-    // Display formats with GPU-specific styling
     "format": " {temperatureC}°C",
-    "format-warning": "<span foreground='#fab387'></span> <span foreground='#fab387'>{temperatureC}°C</span>",
-    "format-critical": "<span foreground='#f38ba8'></span> <span foreground='#f38ba8'>{temperatureC}°C</span>",
-    // Tooltip
     "tooltip": true,
-    "tooltip-format": "GPU Temperature: {temperatureC}°C\nNVIDIA GeForce MX250",
-    // Appearance
+    "tooltip-format": "GPU Temperature: {temperatureC}°C",
     "max-length": 12,
     "min-length": 2
   },
-  // CPU Temperature Monitor
+  // CPU Temperature Monitor (Intel coretemp package sensor, then AMD k10temp Tctl)
   "temperature#27": {
-    "thermal-zone": 27, // x86_pkg_temp - CPU package temperature
-    // Temperature thresholds for CPU
-    "critical-threshold": 85, // CPU critical temp
-    "warning-threshold": 70, // CPU warning temp
-    // Update frequency
+    "hwmon-path-abs": [
+      "/sys/devices/platform/coretemp.0/hwmon",
+      "/sys/devices/pci0000:00/0000:00:18.3/hwmon"
+    ],
+    "input-filename": "temp1_input",
+    "warning-threshold": 70,
+    "critical-threshold": 85,
     // "interval": 2,
-    // Display formats with CPU-specific styling
     "format": " {temperatureC}°C",
-    "format-warning": "<span foreground='#fab387'></span> <span foreground='#fab387'>{temperatureC}°C</span>",
-    "format-critical": "<span foreground='#f38ba8'></span> <span foreground='#f38ba8'>{temperatureC}°C</span>",
-    // Tooltip
     "tooltip": true,
-    "tooltip-format": "CPU Temperature: {temperatureC}°C\nIntel(R) Core(TM) i7-10510U",
-    // Appearance
+    "tooltip-format": "CPU Temperature: {temperatureC}°C",
     "max-length": 12,
     "min-length": 2
   },
-  // System/ACPI Temperature Monitor
+  // System Temperature Monitor (waybar's default thermal zone 0, usually acpitz)
   "temperature#0": {
-    "thermal-zone": 0, // acpitz - ACPI thermal zone
-    // Temperature thresholds
-    "critical-threshold": 50,
-    "warning-threshold": 40,
-    // Update frequency
+    "warning-threshold": 60,
+    "critical-threshold": 80,
     // "interval": 5,
-    // Display formats with system-specific styling
     "format": "󰔏 {temperatureC}°C",
-    "format-warning": "<span foreground='#fab387'>󰔏</span> <span foreground='#fab387'>{temperatureC}°C</span>",
-    "format-critical": "<span foreground='#f38ba8'>󰔏</span> <span foreground='#f38ba8'>{temperatureC}°C</span>",
-    // Tooltip
     "tooltip": true,
-    "tooltip-format": "System Temperature: {temperatureC}°C\nACPI Thermal Zone",
-    // Appearance
+    "tooltip-format": "System Temperature: {temperatureC}°C",
     "max-length": 12,
     "min-length": 2
   }

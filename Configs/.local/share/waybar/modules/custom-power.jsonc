@@ -1,6 +1,6 @@
 {
     "custom/power": {
-        "format": "{0}",
+        "format": " {0}",
         "rotate": 0,
         "tooltip": true,
         "tooltip-format": " Logout menu",

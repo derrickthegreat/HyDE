@@ -227,16 +227,29 @@ send_notification() {
 # (format-icons "activated"/"deactivated"), kept as JSON \u escapes so this
 # stays plain ASCII in the script and lets waybar's own JSON parser decode
 # them, same as it already does for the .jsonc module definitions.
+# Wallbash colour as #RRGGBB: the dcol_* variable when the environment has it,
+# else the current wallpaper's palette, else the given fallback
+wallbash_color() {
+    local name=$1 fallback=$2 value=${!1}
+    [[ -z $value && -f "$HYDE_CACHE_HOME/wall.dcol" ]] &&
+        value=$(grep -m1 "^$name=" "$HYDE_CACHE_HOME/wall.dcol" | cut -d '"' -f2)
+    if [[ $value =~ ^[0-9a-fA-F]{6}$ ]]; then
+        echo "#$value"
+    else
+        echo "$fallback"
+    fi
+}
+
 generate_status() {
     local icon alt tooltip
     if [ "$intended" -eq 1 ]; then
         icon='󰅶'
         alt="activated"
-        tooltip="<span foreground='#98c379'>󰅶 Caffeine Mode Active</span>\nPrevents system from going to sleep"
+        tooltip="<span foreground='$(wallbash_color dcol_3xa8 '#98c379')'>󰅶 Caffeine Mode Active</span>\nPrevents system from going to sleep"
     else
         icon='󰛊'
         alt="deactivated"
-        tooltip="<span foreground='#e06c75'>󰛊 Caffeine Mode Inactive</span>\nSystem will follow normal power settings"
+        tooltip="<span foreground='$(wallbash_color dcol_1xa6 '#e06c75')'>󰛊 Caffeine Mode Inactive</span>\nSystem will follow normal power settings"
     fi
     printf '{"text":"%s","alt":"%s","tooltip":"%s","class":"%s"}\n' "$icon" "$alt" "$tooltip" "$alt"
 }

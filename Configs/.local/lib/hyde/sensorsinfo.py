@@ -6,14 +6,10 @@ It uses the `sensors` command to get sensor data and formats it for display.
 This script is designed to be used with Waybar or similar status bars.
 
 
-Use --interval
-If you want to run this script in a loop, you can use the --interval option.
-This will consume more RAM but lesser CPU calls.
-Do not use --interval if you want to run this script once.
-and let the bar poll it. Might cause more CPU calls. but frees up RAM.
-
-
-
+The bundled module runs it once per poll, so --next/--prev can refresh the
+tooltip right away through the module's signal. --interval keeps it running
+in a loop instead, which avoids restarting Python but can't be refreshed by a
+signal: a page change then shows on the next tick.
 """
 
 import json
@@ -64,14 +60,16 @@ def format_columns(data, max_entries_per_column=15):
 
 PAGE_SIZE = 5
 PAGE_FILE = "/tmp/sensorinfo_page"
+# Must match "signal" in custom-sensorsinfo.jsonc
+WAYBAR_SIGNAL = 23
 
 
 def get_current_page(total_pages):
-    if os.path.exists(PAGE_FILE):
+    try:
         with open(PAGE_FILE, "r", encoding="utf-8") as f:
-            page = int(f.read().strip())
-            return page % total_pages
-    return 0
+            return int(f.read().strip()) % total_pages
+    except (OSError, ValueError):
+        return 0
 
 
 def save_current_page(page):
@@ -79,39 +77,28 @@ def save_current_page(page):
         f.write(str(page))
 
 
-def get_temp_color(temp):
-    temp_colors = {
-        120: "#8b0000",  # Dark Red for 120 and above
-        115: "#ad1f2f",  # Red for 115 to 119
-        110: "#d22f2f",  # Light Red for 110 to 114
-        105: "#ff471a",  # Orange-Red for 105 to 109
-        100: "#ff6347",  # Tomato for 100 to 104
-        95: "#ff8c00",  # Dark Orange for 95 to 99
-        90: "#ffa500",  # Orange for 90 to 94
-        85: "#ffd700",  # Gold for 85 to 89
-        80: "#ffff00",  # Yellow for 80 to 84
-        75: "#ffa07a",  # Light Salmon for 75 to 79
-        70: "#ff7f50",  # Coral for 70 to 74
-        65: "#ff4500",  # Orange Red for 65 to 69
-        60: "#ff6347",  # Tomato for 60 to 64
-        55: "#ff8c00",  # Dark Orange for 55 to 59
-        45: "",  # No color for 45 to 54
-        40: "#add8e6",  # Light Blue for 40 to 44
-        35: "#87ceeb",  # Sky Blue for 35 to 39
-        30: "#4682b4",  # Steel Blue for 30 to 34
-        25: "#4169e1",  # Royal Blue for 25 to 29
-        20: "#0000ff",  # Blue for 20 to 24
-        0: "#00008b",  # Dark Blue for below 20
-    }
+# Lower bound in °C -> colour, the same ramp as styles/classes/cpuinfo.css so a
+# reading looks the same in the bar and here. 40-59 keeps the theme's text colour.
+TEMP_COLORS = (
+    (90, "#8b0000"),
+    (85, "#ad1f2f"),
+    (80, "#d22f2f"),
+    (75, "#ff471a"),
+    (70, "#ff6347"),
+    (65, "#ff8c00"),
+    (60, "#ffa500"),
+    (40, ""),
+    (25, "#87ceeb"),
+    (15, "#4682b4"),
+    (0, "#4169e1"),
+)
 
-    for threshold in sorted(temp_colors.keys(), reverse=True):
-        if temp >= threshold:
-            color = temp_colors[threshold]
-            if color:
-                return f"<span color='{color}'><b>{temp}°C</b></span>"
-            else:
-                return f"{temp}°C"
-    return f"{temp}°C"
+
+def get_temp_color(temp):
+    color = next((color for threshold, color in TEMP_COLORS if temp >= threshold), TEMP_COLORS[-1][1])
+    if color:
+        return f"<span color='{color}'><b>{temp:.0f}°C</b></span>"
+    return f"{temp:.0f}°C"
 
 
 def get_sensor_data(result_sensors, page=0):
@@ -206,6 +193,46 @@ def get_sensor_data(result_sensors, page=0):
     return {"text": text, "tooltip": tooltip}
 
 
+def read_sensors():
+    """Return sensor readings shaped like `sensors -j`, or None when there are none."""
+    try:
+        import sensors
+
+        sensors.init()
+        sensors_data = {}
+        for chip in sensors.iter_detected_chips():
+            chip_name = str(chip)
+            sensors_data[chip_name] = {}
+            for feature in chip:
+                label = feature.label
+                value = feature.get_value()
+                sensors_data[chip_name][label] = value
+        return sensors_data or None
+    except ImportError:
+        pass
+    # Fallback to subprocess if python-sensors is not available. `sensors` exits 1
+    # when it finds nothing, which is normal in a VM or before sensors-detect.
+    try:
+        result = subprocess.run(
+            ["sensors", "-j"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            text=True,
+            check=True,
+        )
+        return json.loads(result.stdout) or None
+    except (OSError, subprocess.CalledProcessError, json.JSONDecodeError):
+        return None
+
+
+def no_sensors():
+    return {
+        "text": " ",
+        "tooltip": "No sensors found\nInstall lm_sensors and run sensors-detect",
+        "class": "no-sensors",
+    }
+
+
 def main():
     parser = argparse.ArgumentParser(description="Sensor Info")
     parser.add_argument(
@@ -219,42 +246,20 @@ def main():
     args = parser.parse_args()
 
     while True:
-        # Use sensors library if available, else fallback to subprocess
-        try:
-            import sensors
-
-            sensors.init()
-            sensors_data = {}
-            for chip in sensors.iter_detected_chips():
-                chip_name = str(chip)
-                sensors_data[chip_name] = {}
-                for feature in chip:
-                    label = feature.label
-                    value = feature.get_value()
-                    sensors_data[chip_name][label] = value
+        sensors_data = read_sensors()
+        if sensors_data is None:
+            sensor_info = no_sensors()
+        else:
+            total_pages = (len(sensors_data) + PAGE_SIZE - 1) // PAGE_SIZE
+            page = get_current_page(total_pages)
+            if args.next or args.prev:
+                page = (page + (1 if args.next else -1)) % total_pages
+                # Save before signalling so the refresh reads the new page
+                save_current_page(page)
+                subprocess.run(["pkill", f"-RTMIN+{WAYBAR_SIGNAL}", "waybar"], check=False)
+                return
             result_sensors = type("Result", (), {"stdout": json.dumps(sensors_data)})()
-        except ImportError:
-            # Fallback to subprocess if python-sensors is not available
-            result_sensors = subprocess.run(
-                ["sensors", "-j"],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.DEVNULL,
-                text=True,
-                check=True,
-            )
-        sensors_data = json.loads(result_sensors.stdout)
-        devices = list(sensors_data.keys())
-        total_pages = (len(devices) + PAGE_SIZE - 1) // PAGE_SIZE
-
-        page = get_current_page(total_pages)
-        if args.next:
-            page = (page + 1) % total_pages
-            subprocess.run(["pkill", "-RTMIN+19", "waybar"], check=False)
-        elif args.prev:
-            page = (page - 1 + total_pages) % total_pages
-            subprocess.run(["pkill", "-RTMIN+19", "waybar"], check=False)
-        save_current_page(page)
-        sensor_info = get_sensor_data(result_sensors, page)
+            sensor_info = get_sensor_data(result_sensors, page)
         print(json.dumps(sensor_info, separators=(",", ":")))
         sys.stdout.flush()
         if args.interval <= 0:
