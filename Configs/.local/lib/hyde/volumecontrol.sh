@@ -45,17 +45,18 @@ notify_vol() {
     iconStyle="knob"
     [ "$angle" -gt 100 ] && angle=100
     ico="$icodir/$iconStyle-$angle.svg"
-    bar=$(seq -s "." $((vol / 15)) | sed 's/[0-9]//g')
-    [[ $isNotify == true ]] && notify-send -a "HyDE Notify" -r 8 -t 2000 -i "$ico" "$vol$bar" "$nsink"
+    # The notification daemon draws its progress bar from the value hint, which tops out at 100 even with boost
+    [[ $isNotify == true ]] && notify-send -a "HyDE Notify" -h string:x-canonical-private-synchronous:hyde.volume \
+        -h "int:value:$((vol > 100 ? 100 : vol))" -t 2000 -i "$ico" "$vol%" "$nsink"
 }
 notify_mute() {
     [ "$srce" == "@DEFAULT_AUDIO_SOURCE@" ] && srce="--default-source" || srce=""
     mute=$(pamixer "$srce" --get-mute | cat)
     [ "$srce" == "--default-source" ] && dvce="microphone" || dvce="speaker"
     if [ "$mute" == "true" ]; then
-        [[ $isNotify == true ]] && notify-send -a "HyDE Notify" -r 8 -t 2000 -i "$icodir/muted-$dvce.svg" "muted" "$nsink"
+        [[ $isNotify == true ]] && notify-send -a "HyDE Notify" -h string:x-canonical-private-synchronous:hyde.volume -t 2000 -i "$icodir/muted-$dvce.svg" "Muted" "$nsink"
     else
-        [[ $isNotify == true ]] && notify-send -a "HyDE Notify" -r 8 -t 2000 -i "$icodir/unmuted-$dvce.svg" "unmuted" "$nsink"
+        [[ $isNotify == true ]] && notify-send -a "HyDE Notify" -h string:x-canonical-private-synchronous:hyde.volume -t 2000 -i "$icodir/unmuted-$dvce.svg" "Unmuted" "$nsink"
     fi
 }
 change_volume() {
@@ -142,9 +143,9 @@ select_output() {
         if [ -n "$selection" ]; then
             device=$(echo "$pw_dump" | sel=$selection jq -r '.[] | select(.info?.props?."media.class" == "Audio/Sink" and .info?.props?."node.description" == env.sel) | .info?.props?."object.id"' | xargs)
             if wpctl set-default "$device"; then
-                notify-send -t 2000 -i "$icodir/unmuted-speaker.svg" -r 8 -u low "Activated: $selection"
+                notify-send -a "HyDE Alert" -h string:x-canonical-private-synchronous:hyde.volume -t 2000 -i "$icodir/unmuted-speaker.svg" -u low "Activated: $selection"
             else
-                notify-send -t 2000 -r 8 -u critical "Error activating $selection"
+                notify-send -a "HyDE Alert" -h string:x-canonical-private-synchronous:hyde.volume -t 2000 -u critical "Error activating $selection"
             fi
         else
             echo "$pw_dump" | jq -r '.[] | select(.info?.props?."media.class" == "Audio/Sink") | .info?.props?."node.description"' | sort
@@ -153,9 +154,9 @@ select_output() {
         if [ -n "$selection" ]; then
             device=$(pactl list sinks | grep -C2 -F "Description: $selection" | grep Name | cut -d: -f2 | xargs)
             if pactl set-default-sink "$device"; then
-                notify-send -t 2000 -i "$icodir/unmuted-speaker.svg" -r 8 -u low "Activated: $selection"
+                notify-send -a "HyDE Alert" -h string:x-canonical-private-synchronous:hyde.volume -t 2000 -i "$icodir/unmuted-speaker.svg" -u low "Activated: $selection"
             else
-                notify-send -t 2000 -r 8 -u critical "Error activating $selection"
+                notify-send -a "HyDE Alert" -h string:x-canonical-private-synchronous:hyde.volume -t 2000 -u critical "Error activating $selection"
             fi
         else
             pactl list sinks | grep -ie "Description:" | awk -F ': ' '{print $2}' | sort

@@ -4,7 +4,7 @@ set -eo pipefail
 RECORDER="wl-screenrec"
 command -v "$RECORDER" &> /dev/null || RECORDER="wf-recorder"
 if ! command -v "$RECORDER" &> /dev/null; then
-    notify-send -a "HyDE Alert" "No screen recorder found. Try installing wl-screenrec or wf-recorder."
+    notify-send -a "HyDE Alert" -h string:x-canonical-private-synchronous:hyde.screenrecord "No screen recorder found" "Try installing wl-screenrec or wf-recorder."
     echo "No screen recorder found. Try installing wl-screenrec or wf-recorder."
     exit 1
 fi
@@ -84,8 +84,13 @@ handle_recording() {
     else
         grim -g "$GEOM" "$tmp_thumbnail"
     fi
+    # Let the notice close before recording starts so it doesn't end up in the video
+    notify-send -a "HyDE Alert" -h string:x-canonical-private-synchronous:hyde.screenrecord -t 1000 \
+        -i "$tmp_thumbnail" "Recording starts now" "Stop it with 'hyde-shell screenrecord --quit'"
+    sleep 1.2
     "$RECORDER" "${parameters[@]}" -f "$save_file_path"
-    notify-send -a "HyDE Alert" "$RECORDER: Recording saved at $save_file_path" -i "$tmp_thumbnail"
+    notify_saved_file screenrecord "Recording saved" "$save_file_path" "$tmp_thumbnail"
+    rm -f "$tmp_thumbnail"
 }
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -103,7 +108,7 @@ while [[ $# -gt 0 ]]; do
             ;;
         --quit)
             killall "$RECORDER"
-            notify-send -a "HyDE Alert" "Recording stopped"
+            notify-send -a "HyDE Alert" -h string:x-canonical-private-synchronous:hyde.screenrecord "Recording stopped"
             exit 0
             ;;
         --help)

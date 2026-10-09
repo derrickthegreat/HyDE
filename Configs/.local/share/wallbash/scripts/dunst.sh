@@ -51,7 +51,7 @@ icon_theme = "${gtkIcon},${allIcons}"
 
 [Type-1]
 appname = "HyDE Alert"
-format = "<b>%s</b>"
+format = "<b>%s</b>\n%b"
 
 [Type-2]
 appname = "HyDE Notify"

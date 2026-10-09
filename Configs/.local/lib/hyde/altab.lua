@@ -254,7 +254,7 @@ local function notify_for_id_with_info(id, id_to_info)
     local body = title .. "\n" .. klass .. "  •  " .. ws
     local icon =
         file_exists(preview_path(info.stableId, info.address)) and preview_path(info.stableId, info.address) or nil
-    local cmd = "notify-send " .. shell_escape(klass) .. " " .. shell_escape(body) .. " -t 2000 -r 6"
+    local cmd = "notify-send -a 'HyDE Alert' -h string:x-canonical-private-synchronous:hyde.altab -t 2000 " .. shell_escape(klass) .. " " .. shell_escape(body)
     if icon then
         cmd = cmd .. " -i " .. shell_escape(icon)
     end

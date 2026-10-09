@@ -217,9 +217,9 @@ stop_inhibitor() {
 
 send_notification() {
     if [ "$intended" -eq 1 ]; then
-        notify-send -a "HyDE Notify" -r 21 -t 800 "Caffeine Mode: ON"
+        notify-send -a "HyDE Notify" -h string:x-canonical-private-synchronous:hyde.caffeine -t 800 "Caffeine Mode: ON"
     else
-        notify-send -a "HyDE Notify" -r 21 -t 800 "Caffeine Mode: OFF"
+        notify-send -a "HyDE Notify" -h string:x-canonical-private-synchronous:hyde.caffeine -t 800 "Caffeine Mode: OFF"
     fi
 }
 

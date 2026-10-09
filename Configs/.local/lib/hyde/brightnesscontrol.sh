@@ -25,8 +25,8 @@ send_notification() {
     brightinfo=$(brightnessctl info | awk -F "'" '/Device/ {print $2}')
     angle="$((((brightness + 2) / 5) * 5))"
     ico="$iconsDir/Wallbash-Icon/media/knob-$angle.svg"
-    bar=$(seq -s "." $((brightness / 15)) | sed 's/[0-9]//g')
-    [[ $isNotify == true ]] && notify-send -a "HyDE Notify" -r 7 -t 800 -i "$ico" "$brightness$bar" "$brightinfo"
+    [[ $isNotify == true ]] && notify-send -a "HyDE Notify" -h string:x-canonical-private-synchronous:hyde.brightness \
+        -h "int:value:$brightness" -t 800 -i "$ico" "$brightness%" "$brightinfo"
 }
 
 get_brightness() {

@@ -6,7 +6,8 @@ import shutil
 from subprocess import run, CalledProcessError, TimeoutExpired
 from typing import Optional
 
-DEFAULT_APP_NAME = "HyDE"
+# dunst styles HyDE notifications by app name: "HyDE Alert" for messages, "HyDE Notify" for OSDs
+DEFAULT_APP_NAME = "HyDE Alert"
 DEFAULT_URGENCY = "normal"
 
 _notify_send_path: Optional[str] = None
@@ -46,8 +47,13 @@ def send(
     category: Optional[str] = None,
     app_name: Optional[str] = DEFAULT_APP_NAME,
     replace_id: Optional[int] = None,
+    tag: Optional[str] = None,
 ) -> None:
-    """Send a desktop notification via notify-send, with console fallback."""
+    """Send a desktop notification via notify-send, with console fallback.
+
+    Notifications with the same tag replace each other. Prefer it over
+    replace_id, whose numbers can collide with other notifications.
+    """
     if not _is_gui_available() or not _has_notify_send():
         _print_fallback(summary, body, app_name)
         return
@@ -65,6 +71,8 @@ def send(
         command.extend(["-a", app_name])
     if replace_id:
         command.extend(["-r", str(replace_id)])
+    if tag:
+        command.extend(["-h", f"string:x-canonical-private-synchronous:hyde.{tag}"])
     command.append(summary)
     if body:
         command.append(body)

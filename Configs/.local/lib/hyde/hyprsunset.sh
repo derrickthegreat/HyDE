@@ -52,9 +52,9 @@ send_notification() {
         message="$newGamma"
     fi
     if [ -n "$message" ]; then
-        notify-send -a "HyDE Notify" -r 19 -t 800 -i redshift "$message" "$title"
+        notify-send -a "HyDE Notify" -h string:x-canonical-private-synchronous:hyde.hyprsunset -t 800 -i redshift "$message" "$title"
     else
-        notify-send -a "HyDE Notify" -r 19 -t 800 -i redshift "$title"
+        notify-send -a "HyDE Notify" -h string:x-canonical-private-synchronous:hyde.hyprsunset -t 800 -i redshift "$title"
     fi
 }
 send_signal_to_process() {

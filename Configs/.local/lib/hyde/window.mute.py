@@ -310,8 +310,8 @@ def main() -> int:
         if os.environ.get("HYPRLAND_INSTANCE_SIGNATURE"):
             _notify(
                 "No sink input available.",
-                app_name="t1",
-                replace_id=91190,
+                app_name="HyDE Alert",
+                tag="volume",
                 expire_time=1200,
                 icon=_icon(ICON_HYPRDOTS),
             )
@@ -328,8 +328,8 @@ def main() -> int:
         print(f"PulseAudio failed to set '{failed_id}' to '{state_msg}'.", file=sys.stderr)
         _notify(
             f"Failed to set '{failed_id}' to '{state_msg}'!",
-            app_name="t1",
-            replace_id=91190,
+            app_name="HyDE Alert",
+            tag="volume",
             expire_time=1200,
             icon=_icon(ICON_HYPRDOTS),
         )
@@ -338,8 +338,8 @@ def main() -> int:
     _notify(
         f"{state_msg} {label}",
         body=_default_sink_label() or None,
-        app_name="t2",
-        replace_id=91190,
+        app_name="HyDE Notify",
+        tag="volume",
         expire_time=800,
         icon=_icon(state_icon),
     )

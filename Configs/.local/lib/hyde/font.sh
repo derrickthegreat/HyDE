@@ -54,7 +54,7 @@ download_and_extract() {
                 mkdir -p "$font_dir/hyde"
                 mv "$file" "$font_dir/hyde/$name.ttf"
                 echo "[font] $name installed successfully. Please restart hyprlock to apply changes."
-                notify-send -i "preferences-desktop-font" "HyDE font" "$name Installed successfully"
+                notify-send -a "HyDE Alert" -i "preferences-desktop-font" "HyDE font" "$name Installed successfully"
                 return 0
                 ;;
             *)
@@ -65,10 +65,10 @@ download_and_extract() {
         esac
         if ! cp -rn "$temp_dir/$name" "$font_dir"; then
             echo "[font] Failed to extract $file"
-            notify-send -i "preferences-desktop-font" "HyDE font" "Failed to extract $file"
+            notify-send -a "HyDE Alert" -i "preferences-desktop-font" "HyDE font" "Failed to extract $file"
             return 1
         fi
-        notify-send -i "preferences-desktop-font" "HyDE font" "$name Installed successfully"
+        notify-send -a "HyDE Alert" -i "preferences-desktop-font" "HyDE font" "$name Installed successfully"
     done
     rm -rf "$temp_dir"
     echo "[font] $name installed successfully. Please restart hyprlock to apply changes."

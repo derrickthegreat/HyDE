@@ -50,7 +50,7 @@ function M.send(summary, body, opts)
         if synchronous and synchronous ~= '' then
             sync_flag = ' -h string:x-canonical-private-synchronous:' .. sh_quote(synchronous)
         end
-        local cmd = string.format('notify-send -a "HyDE Power" -t %d -r %d -u %s%s%s %s %s >/dev/null 2>&1 &',
+        local cmd = string.format('notify-send -a "HyDE Alert" -t %d -r %d -u %s%s%s %s %s >/dev/null 2>&1 &',
             timeout, replace_id, tostring(urgency), icon_flag, sync_flag, sh_quote(summary or ''), sh_quote(body or ''))
         -- Use sh -c to ensure & is interpreted by the shell
         os.execute('sh -c ' .. sh_quote(cmd))

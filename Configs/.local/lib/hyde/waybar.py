@@ -352,7 +352,7 @@ def _apply_layout(layout_path, style_path, notify_label):
     update_border_radius()
     generate_includes()
     update_global_css()
-    notify.send("Waybar", f"Layout changed to {notify_label}", replace_id=9)
+    notify.send("Waybar", f"Layout changed to {notify_label}", tag="waybar")
     restart_waybar()
 
 
@@ -717,7 +717,7 @@ def style_selector(current_layout=None):
         notify.send(
             "Waybar",
             f"Style changed to {os.path.basename(selected_style)}",
-            replace_id=9,
+            tag="waybar",
         )
         restart_waybar()
     sys.exit(0)
@@ -809,7 +809,7 @@ def handle_backup_display():
     backup_layouts = layouts_data["backups"]
 
     if not backup_layouts:
-        notify.send("Waybar", "No backup layouts found", replace_id=9)
+        notify.send("Waybar", "No backup layouts found", tag="waybar")
         return
 
     backup_names = [pair["name"] for pair in backup_layouts]

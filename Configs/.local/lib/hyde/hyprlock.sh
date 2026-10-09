@@ -139,7 +139,7 @@ fn_select() {
     layout_dir="$confDir/hypr/hyprlock"
     layout_items=$(find -L "$layout_dir" -name "*.conf" ! -name "theme.conf" 2>/dev/null | sed 's/\.conf$//')
     if [ -z "$layout_items" ]; then
-        notify-send -i "preferences-desktop-display" "Error" "No .conf files found in $layout_dir"
+        notify-send -a "HyDE Alert" -i "preferences-desktop-display" "Error" "No .conf files found in $layout_dir"
         exit 1
     fi
     layout_items="Theme Preference
@@ -165,7 +165,7 @@ $layout_items"
     generate_conf "$hyprlock_conf_path"
     "$LIB_DIR/hyde/font.sh" resolve "$hyprlock_conf_path"
     fn_profile
-    notify-send -i "system-lock-screen" "Hyprlock layout:" "$selected_layout"
+    notify-send -a "HyDE Alert" -h string:x-canonical-private-synchronous:hyde.hyprlock -i "system-lock-screen" "Hyprlock layout:" "$selected_layout"
 }
 check_and_sanitize_process() {
     local unit_name="${1:-$HYPRLOCK_SCOPE_NAME}"
@@ -407,7 +407,7 @@ fn_reload() {
     "$LIB_DIR/hyde/font.sh" resolve "$hyprlock_conf_path"
     fn_profile
     reload_hyprlock
-    notify-send -i "system-lock-screen" "Hyprlock config regenerated" "Layout: $layout"
+    notify-send -a "HyDE Alert" -h string:x-canonical-private-synchronous:hyde.hyprlock -i "system-lock-screen" "Hyprlock config regenerated" "Layout: $layout"
 }
 
 ensure_lockscreen_bg_exist() {

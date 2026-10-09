@@ -159,7 +159,7 @@ def run_uv(
     env["UV_PROJECT_ENVIRONMENT"] = venv_path
 
     if notify_msg:
-        notify.send("HyDE UV", notify_msg, replace_id=9)
+        notify.send("HyDE UV", notify_msg, tag="python-env")
 
     cmd = [uv] + args + ["--project", project_dir]
     # uv sync (and the sync phase of add/remove) creates the project environment
@@ -268,7 +268,7 @@ def rebuild_venv() -> None:
 def sync_packages() -> None:
     """Installs dependencies from pyproject.toml using uv sync."""
     run_uv(["sync"], notify_msg="📦 Syncing dependencies...")
-    notify.send("HyDE UV", "✅ Dependencies are up to date", replace_id=9)
+    notify.send("HyDE UV", "✅ Dependencies are up to date", tag="python-env")
 
 
 def install_package(package: str | Iterable[str]) -> None:
@@ -279,7 +279,7 @@ def install_package(package: str | Iterable[str]) -> None:
         pkgs = list(package)
 
     if not pkgs:
-        notify.send("HyDE UV", "No packages specified for installation", urgency="warning")
+        notify.send("HyDE UV", "No packages specified for installation", urgency="normal")
         return
 
     notify.send("HyDE UV", f"Installing {', '.join(pkgs)}...")
@@ -298,7 +298,7 @@ def uninstall_package(package: str | Iterable[str]) -> None:
         pkgs = list(package)
 
     if not pkgs:
-        notify.send("HyDE UV", "No packages specified for uninstallation", urgency="warning")
+        notify.send("HyDE UV", "No packages specified for uninstallation", urgency="normal")
         return
 
     notify.send("HyDE UV", f"Uninstalling {', '.join(pkgs)}...")

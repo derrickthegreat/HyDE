@@ -39,8 +39,8 @@ done | sort -n | rofi -dmenu \
     -select "$rofiStyle")
 if [ -n "$RofiSel" ]; then
     set_conf "rofiStyle" "$RofiSel"
-    notify-send -a "HyDE Alert" -r 2 -t 2200 -i "$rofiAssetDir/$RofiSel.png" " style $RofiSel applied..."
+    notify-send -a "HyDE Alert" -h string:x-canonical-private-synchronous:hyde.rofi-style -t 2200 -i "$rofiAssetDir/$RofiSel.png" " style $RofiSel applied..."
 fi
 if [ -n "$ROFI_LAUNCH_STYLE" ]; then
-    notify-send -a "HyDE Alert" -r 3 -u critical "Style: '$ROFI_LAUNCH_STYLE' is explicitly set, remove it in ~/.config/hyde/config.toml for changes to take effect."
+    notify-send -a "HyDE Alert" -h string:x-canonical-private-synchronous:hyde.rofi-style -u critical "Style: '$ROFI_LAUNCH_STYLE' is explicitly set, remove it in ~/.config/hyde/config.toml for changes to take effect."
 fi

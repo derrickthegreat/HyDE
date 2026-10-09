@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #! A fallback script. Incase user explcitly set swww as wallpaper backend
-notify-send "DEPRECATION NOTICE: swww backend is deprecated, please switch to awww or other supported backends. See 'hyde-shell wallpaper --help' for more info."
+notify-send -a "HyDE Alert" "DEPRECATION NOTICE: swww backend is deprecated, please switch to awww or other supported backends. See 'hyde-shell wallpaper --help' for more info."
 
 selected_wall="${1:-"$$HYDE_CACHE_HOME/wall.set"}"
 scrDir="$(dirname "$(realpath "$0")")"

@@ -52,6 +52,32 @@ send_notifs() {
     local args=("$@")
     notify-send "${args[@]}"
 }
+
+##
+# Announces a saved file and offers to open it or show it in the file manager.
+# notify-send waits for the notification to close, so call this in the
+# background. Notifications sharing a tag replace each other.
+#
+# Arguments:
+#   $1 - tag, e.g. "screenshot"
+#   $2 - summary
+#   $3 - saved file
+#   $4 - icon (defaults to the file itself)
+##
+notify_saved_file() {
+    local tag=$1 summary=$2 file=$3 icon=${4:-$3}
+    local action
+    action=$(notify-send -a "HyDE Alert" -h "string:x-canonical-private-synchronous:hyde.$tag" -i "$icon" \
+        -A "default=Open" -A "folder=Show in folder" "$summary" "${file##*/}")
+    case $action in
+    default) xdg-open "$file" ;;
+    folder)
+        dbus-send --session --dest=org.freedesktop.FileManager1 --type=method_call /org/freedesktop/FileManager1 \
+            org.freedesktop.FileManager1.ShowItems array:string:"file://$file" string:"" ||
+            xdg-open "${file%/*}"
+        ;;
+    esac
+}
 print_log() {
     [[ "${PRINT_LOG}" == "false" ]] && return 0
     while (("$#")); do
@@ -734,7 +760,7 @@ accepted_mime_types() {
             return 0
         else
             print_log -err "File type not supported for this wallpaper backend."
-            notify-send -u critical -a "HyDE-Alert" "File type not supported for this wallpaper backend."
+            notify-send -u critical -a "HyDE Alert" "File type not supported for this wallpaper backend."
         fi
     done
 }
@@ -756,7 +782,7 @@ clamp_col_count() {
     ((count > max)) && count=$max
     printf "%d" "$count"
 }
-export -f get_hyprConf get_monitor_scale clamp_col_count get_wallpaper_fill_color get_rofi_pos is_hovered toml_write get_hashmap get_aurhlpr set_conf set_hash check_package get_themes print_log pkg_installed paste_string extract_thumbnail accepted_mime_types dconf_write send_notifs export_hyde_config wallbash_state_is_complete get_screen_geometry fit_wallpaper wallpaper_fit_overrides get_wallpaper_fit_override set_wallpaper_fit_override get_crop_budget
+export -f get_hyprConf get_monitor_scale clamp_col_count get_wallpaper_fill_color get_rofi_pos is_hovered toml_write get_hashmap get_aurhlpr set_conf set_hash check_package get_themes print_log pkg_installed paste_string extract_thumbnail accepted_mime_types dconf_write send_notifs notify_saved_file export_hyde_config wallbash_state_is_complete get_screen_geometry fit_wallpaper wallpaper_fit_overrides get_wallpaper_fit_override set_wallpaper_fit_override get_crop_budget
 
 ##
 # Fails the source when the generated-state directories could not be created,

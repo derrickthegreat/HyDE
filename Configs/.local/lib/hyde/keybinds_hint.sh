@@ -18,7 +18,7 @@ then
 fi)"
 wait
 if [ -z "$output" ]; then
-    notify-send "Keybind Hint" "Initialization failed."
+    notify-send -a "HyDE Alert" "Keybind Hint" "Initialization failed."
     exit 0
 fi
 if ! command -v rofi &>/dev/null; then

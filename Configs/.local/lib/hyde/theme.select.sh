@@ -42,7 +42,7 @@ selector_menu() {
         -theme "${ROFI_THEME_MENU_STYLE:-selector}")
     if [ -n "$RofiSel" ]; then
         selectedStyle=$(echo "$RofiSel" | awk -F '\x00' '{print $1}' | sed 's/Style //')
-        notify-send -a "HyDe Alert" -i "$rofiAssetDir/theme_style_$selectedStyle.png" "Style $selectedStyle applied..."
+        notify-send -a "HyDE Alert" -i "$rofiAssetDir/theme_style_$selectedStyle.png" "Style $selectedStyle applied..."
         set_conf "ROFI_THEME_STYLE" "$selectedStyle"
     fi
     exit 0

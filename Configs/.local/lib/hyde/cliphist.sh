@@ -9,8 +9,28 @@ cliphist_style="${ROFI_CLIPHIST_STYLE:-clipboard}"
 # shellcheck disable=SC1091
 [[ -f "${LIB_DIR}/hyde/shutils/l10n.sh" ]] && source "${LIB_DIR}/hyde/shutils/l10n.sh"
 
+clip_notify() {
+    notify-send -a "HyDE Alert" -h string:x-canonical-private-synchronous:hyde.clipboard "$@"
+}
+# cliphist lists images as "<id>\t[[ binary data 74 KiB png 784x429 ]]". Show a readable
+# label in the second (displayed) column and keep the marker as a hidden third one,
+# which check_content looks for. cliphist only reads the id when decoding or deleting.
+cliphist_list() {
+    cliphist list | awk -F '\t' -v OFS='\t' '
+        $2 ~ /^\[\[ binary data .* [0-9]+x[0-9]+ \]\]$/ {
+            n = split($2, f, " ")
+            size = f[4]
+            for (i = 5; i <= n - 3; i++) size = size " " f[i]
+            dims = f[n - 1]
+            sub("x", "×", dims)
+            print $1, "󰋩 Image · " dims " · " size, $2
+            next
+        }
+        { print }'
+}
 
 process_deletion() {
+    local deleted=()
     while IFS= read -r line; do
         echo "$line"
         if [[ $line == ":w:i:p:e:"* ]]; then
@@ -21,9 +41,14 @@ process_deletion() {
             break
         elif [ -n "$line" ]; then
             cliphist delete <<< "$line"
-            notify-send "${_T["Deleted"]:-Deleted}" "$line"
+            deleted+=("$(cut -f2 <<< "$line")")
         fi
     done
+    if [ ${#deleted[@]} -eq 1 ]; then
+        clip_notify "${_T["Deleted"]:-Deleted}" "${deleted[0]:0:80}"
+    elif [ ${#deleted[@]} -gt 1 ]; then
+        clip_notify "${_T["Deleted"]:-Deleted}" "${#deleted[@]} ${_T["items"]:-items}"
+    fi
     exit 0
 }
 process_selections() {
@@ -64,7 +89,7 @@ check_content() {
         img_idx=$(awk -F '\t' '{print $1}' <<< "$line")
         local temp_preview="$XDG_RUNTIME_DIR/hyde/pastebin-preview_$img_idx"
         wl-paste > "$temp_preview"
-        notify-send -a "${_T["Pastebin:"]:-Pastebin:}" "${_T["Preview:"]:-Preview:} $img_idx" -i "$temp_preview" -t 2000
+        clip_notify -i "$temp_preview" -t 2000 "${_T["Copied to clipboard."]:-Copied to clipboard.}"
         return 1
     fi
 }
@@ -136,7 +161,7 @@ cliphist_cmd() {
     if [[ $CLIPHIST_IMAGE_HISTORY != true ]]; then
         echo -e ":f:a:v:\t📌 ${_T["Favorites"]:-Favorites}"
         echo -e ":o:p:t:\t⚙️ ${_T["Options"]:-Options}"
-        cliphist list
+        cliphist_list
     else
         HYDE_CLIPHIST_IMAGE_ONLY=true cliphist.image.py
     fi
@@ -171,13 +196,13 @@ show_history() {
 
 delete_items() {
     local selected_item
-    selected_item="$(cliphist list | run_rofi " 🗑️ ${_T["Delete"]:-Delete}" -multi-select -i -display-columns 2)"
+    selected_item="$(cliphist_list | run_rofi " 🗑️ ${_T["Delete"]:-Delete}" -multi-select -i -display-columns 2)"
     handle_special_commands "${selected_item##*$'\n'}"
     process_deletion <<< "$selected_item"
 }
 view_favorites() {
     prepare_favorites_for_display || {
-        notify-send "${_T["No favorites."]:-No favorites.}"
+        clip_notify "${_T["No favorites."]:-No favorites.}"
         return
     }
     local selected_item
@@ -190,32 +215,32 @@ view_favorites() {
             local selected_encoded_favorite="${favorites[$((index - 1))]}"
             echo "$selected_encoded_favorite" | base64 --decode | wl-copy
             paste_string "$@"
-            notify-send "${_T["Copied to clipboard."]:-Copied to clipboard.}"
+            clip_notify "${_T["Copied to clipboard."]:-Copied to clipboard.}"
         else
-            notify-send "${_T["Error: Selected favorite not found."]:-Error: Selected favorite not found.}"
+            clip_notify "${_T["Error: Selected favorite not found."]:-Error: Selected favorite not found.}"
         fi
     fi
 }
 add_to_favorites() {
     ensure_favorites_dir
     local item
-    item=$(cliphist list | run_rofi "➕ ${_T["Add to Favorites..."]:-Add to Favorites...}") || exit 0
+    item=$(cliphist_list | run_rofi "➕ ${_T["Add to Favorites..."]:-Add to Favorites...}" -display-columns 2) || exit 0
     if [ -n "$item" ]; then
         local full_item
         full_item=$(echo "$item" | cliphist decode)
         local encoded_item
         encoded_item=$(echo "$full_item" | base64 -w 0)
         if [ -f "$favorites_file" ] && grep -Fxq "$encoded_item" "$favorites_file"; then
-            notify-send "${_T["Item is already in favorites."]:-Item is already in favorites.}"
+            clip_notify "${_T["Item is already in favorites."]:-Item is already in favorites.}"
         else
             echo "$encoded_item" >> "$favorites_file"
-            notify-send "${_T["Added to favorites."]:-Added to favorites.}"
+            clip_notify "${_T["Added to favorites."]:-Added to favorites.}"
         fi
     fi
 }
 delete_from_favorites() {
     prepare_favorites_for_display || {
-        notify-send "${_T["No favorites to remove."]:-No favorites to remove.}"
+        clip_notify "${_T["No favorites to remove."]:-No favorites to remove.}"
         return
     }
     local selected_favorite
@@ -230,9 +255,9 @@ delete_from_favorites() {
             else
                 grep -vF -x "$selected_encoded_favorite" "$favorites_file" > "$favorites_file.tmp" && mv "$favorites_file.tmp" "$favorites_file"
             fi
-            notify-send "${_T["Item removed from favorites."]:-Item removed from favorites.}"
+            clip_notify "${_T["Item removed from favorites."]:-Item removed from favorites.}"
         else
-            notify-send "${_T["Error: Selected favorite not found."]:-Error: Selected favorite not found.}"
+            clip_notify "${_T["Error: Selected favorite not found."]:-Error: Selected favorite not found.}"
         fi
     fi
 }
@@ -243,10 +268,10 @@ clear_favorites() {
         confirm=$(echo -e "${yes_str}\n${_T["No"]:-No}" | run_rofi "☢️ ${_T["Clear All Favorites?"]:-Clear All Favorites?}") || exit 0
         if [ "$confirm" = "$yes_str" ]; then
             : > "$favorites_file"
-            notify-send "${_T["All favorites have been deleted."]:-All favorites have been deleted.}"
+            clip_notify "${_T["All favorites have been deleted."]:-All favorites have been deleted.}"
         fi
     else
-        notify-send "${_T["No favorites to delete."]:-No favorites to delete.}"
+        clip_notify "${_T["No favorites to delete."]:-No favorites to delete.}"
     fi
 }
 manage_favorites() {
@@ -280,7 +305,7 @@ clear_history() {
     handle_special_commands "${selected_item##*$'\n'}"
     if [ "$selected_item" = "$yes_str" ]; then
         cliphist wipe
-        notify-send "${_T["Clipboard history cleared."]:-Clipboard history cleared.}"
+        clip_notify "${_T["Clipboard history cleared."]:-Clipboard history cleared.}"
     fi
 }
 main_menu_options() {
@@ -304,18 +329,18 @@ ocr_scan() {
     local index
     index="$(HYDE_CLIPHIST_IMAGE_ONLY=1 "${LIB_DIR}/hyde/cliphist.image.py" | head -n1)"
     [[ -n $index ]] || {
-        send_notifs "${_T["OCR Error"]:-OCR Error}" "${_T["No images in clipboard history..."]:-No images in clipboard history...}" -r 9
+        send_notifs -a "HyDE Alert" -h string:x-canonical-private-synchronous:hyde.ocr "${_T["OCR Error"]:-OCR Error}" "${_T["No images in clipboard history..."]:-No images in clipboard history...}"
         exit 1
     }
 
     mkdir -p "$runtime_dir"
     cliphist decode "$index" > "${image_path}"
     if [ ! -s "${image_path}" ]; then
-        notify-send "${_T["OCR Error"]:-OCR Error}" "${_T["No image data in clipboard -r 9"]:-No image data in clipboard -r 9}"
+        send_notifs -a "HyDE Alert" -h string:x-canonical-private-synchronous:hyde.ocr "${_T["OCR Error"]:-OCR Error}" "${_T["No image data in clipboard"]:-No image data in clipboard}"
         exit 1
     fi
     print_log -g "Scanning ${image_path}"
-    send_notifs "${_T["OCR"]:-OCR}" "${_T["Scanning latest image from clipboard..."]:-Scanning latest image from clipboard...}" -i "${image_path}" -r 9
+    send_notifs -a "HyDE Alert" -h string:x-canonical-private-synchronous:hyde.ocr -i "${image_path}" "${_T["OCR"]:-OCR}" "${_T["Scanning latest image from clipboard..."]:-Scanning latest image from clipboard...}"
     ocr_extract "$image_path"
 
 }
