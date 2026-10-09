@@ -34,7 +34,7 @@ setup_rofi_config() {
         -i
         -matching fuzzy
         -no-custom
-        -theme-str "entry { placeholder: \"   Glyph\";} $rofi_position"
+        -theme-str "entry { placeholder: \"󰠲 Glyph\";} $rofi_position"
         -theme-str "$font_override"
         -theme-str "$r_override"
         -theme "${ROFI_GLYPH_STYLE:-clipboard}")

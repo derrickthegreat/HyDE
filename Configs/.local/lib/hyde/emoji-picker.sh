@@ -44,7 +44,7 @@ get_emoji_selection() {
                 awk '!seen[$0]++' "$recent_data" "$emoji_data" | rofi -dmenu -i "${ROFI_EMOJI_ARGS[@]/-multi-select/}" -display-columns 1 \
                     -display-column-separator " " \
                     -theme-str "listview {columns: 9;}" \
-                    -theme-str "entry { placeholder: \" 🔎 Emoji\";} $rofi_position $r_override" \
+                    -theme-str "entry { placeholder: \"󰇵 Emoji\";} $rofi_position $r_override" \
                     -theme-str "$font_override" \
                     -theme-str "$size_override" \
                     -theme "clipboard" \
@@ -52,13 +52,13 @@ get_emoji_selection() {
                 ;;
             1 | list)
                 awk '!seen[$0]++' "$recent_data" "$emoji_data" | rofi -dmenu -i "${ROFI_EMOJI_ARGS[@]}" \
-                    -theme-str "entry { placeholder: \" 🔎 Emoji\";} $rofi_position $r_override" \
+                    -theme-str "entry { placeholder: \"󰇵 Emoji\";} $rofi_position $r_override" \
                     -theme-str "$font_override" \
                     -theme "clipboard" \
                     -matching fuzzy -no-custom
                 ;;
             *) awk '!seen[$0]++' "$recent_data" "$emoji_data" | rofi -dmenu -i "${ROFI_EMOJI_ARGS[@]}" \
-                -theme-str "entry { placeholder: \" 🔎 Emoji\";} $rofi_position $r_override" \
+                -theme-str "entry { placeholder: \"󰇵 Emoji\";} $rofi_position $r_override" \
                 -theme-str "$font_override" \
                 -theme "${style_type:-clipboard}" \
                 -matching fuzzy -no-custom ;;

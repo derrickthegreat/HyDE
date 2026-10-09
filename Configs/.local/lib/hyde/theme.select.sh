@@ -42,7 +42,7 @@ selector_menu() {
         -theme "${ROFI_THEME_MENU_STYLE:-selector}")
     if [ -n "$RofiSel" ]; then
         selectedStyle=$(echo "$RofiSel" | awk -F '\x00' '{print $1}' | sed 's/Style //')
-        notify-send -a "HyDE Alert" -i "$rofiAssetDir/theme_style_$selectedStyle.png" "Style $selectedStyle applied..."
+        notify-send -a "HyDE Alert" -h string:x-canonical-private-synchronous:hyde.theme -i "$rofiAssetDir/theme_style_$selectedStyle.png" "Theme picker style $selectedStyle applied"
         set_conf "ROFI_THEME_STYLE" "$selectedStyle"
     fi
     exit 0
@@ -119,5 +119,5 @@ rofiSel=$(
 )
 if [ -n "$rofiSel" ]; then
     "$LIB_DIR/hyde/theme.switch.sh" -s "$rofiSel"
-    notify-send -a "HyDE Alert" -i "$iconsDir/Wallbash-Icon/hyde.png" " $rofiSel"
+    notify-send -a "HyDE Alert" -h string:x-canonical-private-synchronous:hyde.theme -i "$iconsDir/Wallbash-Icon/hyde.png" "Theme" "$rofiSel"
 fi

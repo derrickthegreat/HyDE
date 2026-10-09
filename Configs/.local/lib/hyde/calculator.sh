@@ -17,6 +17,12 @@ setup_rofi_config() {
     r_override="window{width:$width;height:$height;border:${hypr_width}px;border-radius:${wind_border}px;} entry{border-radius:${elem_border}px;} element{border-radius:${elem_border}px;} listview{lines:$lines;columns:2;}"
 }
 main() {
+    # The calc mode comes from the rofi-calc plugin; without it rofi opens nothing
+    if ! rofi -h 2>/dev/null | sed -n '/Detected modes/,/^$/p' | grep -qw calc; then
+        notify-send -a "HyDE Alert" -h string:x-canonical-private-synchronous:hyde.calculator -i accessories-calculator \
+            "Calculator unavailable" "Install the rofi-calc package to use it."
+        exit 1
+    fi
     setup_rofi_config
     if [[ -v customRoFile ]]; then
         rofi -show calc -modi calc -no-show-match -no-sort -config "$customRoFile"

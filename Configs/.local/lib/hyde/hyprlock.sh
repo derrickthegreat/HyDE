@@ -146,7 +146,7 @@ fn_select() {
 $layout_items"
     selected_layout=$(awk -F/ '{print $NF}' <<<"$layout_items" | rofi -dmenu -i -select "$HYPRLOCK_LAYOUT" \
         -p "Select hyprlock layout" \
-        -theme-str 'entry { placeholder: "🔒 Hyprlock Layout..."; }' \
+        -theme-str 'entry { placeholder: "󰍁 Hyprlock Layout..."; }' \
         -theme-str "$font_override" \
         -theme-str "$r_override" \
         -theme-str "$(get_rofi_pos)" \

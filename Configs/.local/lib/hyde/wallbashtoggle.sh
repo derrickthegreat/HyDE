@@ -42,4 +42,5 @@ export reload_flag=1
 [[ $setMode -lt 0 ]] && setMode=$((${#wallbashModes[@]} - 1))
 set_conf "enableWallDcol" "$setMode"
 "$LIB_DIR/hyde/theme.switch.sh"
-notify-send -a "HyDE Alert" -i "$ICONS_DIR/Wallbash-Icon/hyde.png" " ${wallbashModes[setMode]} mode"
+mode=${wallbashModes[setMode]}
+notify-send -a "HyDE Alert" -h string:x-canonical-private-synchronous:hyde.wallbash -i "$ICONS_DIR/Wallbash-Icon/hyde.png" "Wallbash" "${mode^} mode"

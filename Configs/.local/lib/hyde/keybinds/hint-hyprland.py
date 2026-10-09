@@ -2,7 +2,9 @@
 import subprocess
 import json
 import argparse
+import html
 import os
+import re
 from collections import defaultdict
 import time
 
@@ -180,6 +182,42 @@ def map_keyDisplay(key):
     return key_map.get(key, key)
 
 
+# Friendlier names for the hint menu only. key_display keeps Hyprland's own
+# names, since --show-unbind prints it back as config syntax.
+_KEY_LABELS = {
+    "mouse:272": "LMB",
+    "mouse:273": "RMB",
+    "mouse:274": "MMB",
+    "mouse:275": "Mouse 4",
+    "mouse:276": "Mouse 5",
+    "mouse_up": "Scroll up",
+    "mouse_down": "Scroll down",
+    "mouse_left": "Scroll left",
+    "mouse_right": "Scroll right",
+    "XF86AudioMute": "Mute",
+    "XF86AudioMicMute": "Mic mute",
+    "XF86AudioLowerVolume": "Volume down",
+    "XF86AudioRaiseVolume": "Volume up",
+    "XF86AudioPlay": "Play",
+    "XF86AudioPause": "Pause",
+    "XF86AudioStop": "Stop",
+    "XF86AudioNext": "Next track",
+    "XF86AudioPrev": "Previous track",
+    "XF86MonBrightnessUp": "Brightness up",
+    "XF86MonBrightnessDown": "Brightness down",
+}
+
+
+def readable_key(key):
+    """Label a key for the hint menu, e.g. "mouse:272" -> "LMB"."""
+    if key in _KEY_LABELS:
+        return _KEY_LABELS[key]
+    if key.startswith("XF86") and len(key) > 4:
+        # XF86Calculator -> Calculator, XF86KbdLightOnOff -> Kbd Light On Off
+        return " ".join(re.findall(r"[A-Z][a-z0-9]*|[a-z0-9]+", key[4:]))
+    return key
+
+
 def find_duplicated_binds(binds):
     bind_map = defaultdict(list)
     for bind in binds:
@@ -345,6 +383,9 @@ def generate_rofi(binds):
         return " " + " ".join(formatted)
 
     delimiter = os.getenv("ROFI_KEYBIND_HINT_DELIMITER", ">")
+    shown = [bind for bind in binds if not bind.get("catch_all", False)]
+    # Pad to the longest combo, capped so one long submap chain can't push every description aside
+    key_width = min(max((len(bind["displayed_keys"]) for bind in shown), default=0), 28)
     for bind in binds:
         catch_all = bind.get("catch_all", False)
         if catch_all:  # hide the catch all keybind from the rofi menu
@@ -362,11 +403,14 @@ def generate_rofi(binds):
         submap = bind.get("submap", "")
         repeated = "repeat" if bind.get("repeat", False) else ""
         keycode = bind["keycode"]
-        meta_data = f"{dispatcher} {arg} {repeated} {keycode} {header1} {header2} {header3} {header4} {header5} {submap} {displayed_keys}"
+        meta_data = f"{dispatcher} {arg} {repeated} {keycode} {header1} {header2} {header3} {header4} {header5} {submap} {displayed_keys} {bind['key_display']}"
 
         flag_hint = rofi_flag_hint(bind)
-        displayed_keys_with_hint = f"{displayed_keys}{flag_hint}"
-        displayed_rofi_keys = f"{displayed_keys_with_hint} {delimiter:<5} {description}"
+        # Spaces only line the descriptions up in a monospace font, so the key column gets one
+        displayed_rofi_keys = (
+            f"<tt>{html.escape(f'{displayed_keys.ljust(key_width)} {delimiter}', quote=False)}</tt> "
+            f"{html.escape(description, quote=False)}{flag_hint}"
+        )
 
         # Create nested dictionary structure
         if header1 not in groups:
@@ -461,14 +505,14 @@ def expand_meta_data(binds_data, bind_commands=None):
             key_display = ""
         keys = [mod_display] if mod_display else []
         if key_display:
-            keys.append(key_display)
+            keys.append(readable_key(key_display))
         formatted_keys = (
             " + ".join(keys).removeprefix(" + ").removesuffix(" + ")
         )  # remove leading and trailing " + " WARN: not working in python <3.9
 
         if submap in submap_keys:
             submap_mod_display = submap_keys[submap]["mod_display"]
-            submap_key_display = submap_keys[submap]["key_display"]
+            submap_key_display = readable_key(submap_keys[submap]["key_display"])
             bind["submap_mod"] = submap_mod_display
             bind["submap_key"] = submap_key_display
             bind["displayed_keys"] = (

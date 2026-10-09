@@ -161,10 +161,10 @@ rofi_interactive() {
         fi
     else
         text_input=$(get_sites_list | rofi -dmenu -i "${ROFI_WEBSEARCH_ARGS[@]}" \
-            -p "🔎 Select engine" \
+            -p "󰜏 Select engine" \
             -theme-str "$r_override" \
             -config "${ROFI_WEBSEARCH_STYLE:-clipboard}" \
-            -theme-str 'entry { placeholder: "🔎 Search engine...";}' \
+            -theme-str 'entry { placeholder: "󰜏 Search engine...";}' \
             -theme-str "$font_override" \
             -theme-str "window {width: 50%;}" \
             -theme-str 'listview { columns: 3; }')
@@ -183,7 +183,7 @@ rofi_interactive() {
         FINAL_QUERY=$(get_queries_list "$FINAL_SITE" | rofi -dmenu -i "${ROFI_WEBSEARCH_ARGS[@]}" \
             -theme-str "$r_override" \
             -config "${ROFI_WEBSEARCH_STYLE:-clipboard}" \
-            -theme-str 'entry { placeholder: "🔎 Query...";}' \
+            -theme-str 'entry { placeholder: "󰍉 Query...";}' \
             -theme-str "$font_override" \
             -theme-str "window {width: 50%;}")
     fi

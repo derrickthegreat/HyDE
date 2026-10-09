@@ -14,11 +14,18 @@ setup_rofi_config() {
     r_override="window{border:${hypr_width}px;border-radius:${wind_border}px;}wallbox{border-radius:${elem_border}px;} element{border-radius:${elem_border}px;}"
 }
 setup_rofi_config
-browser_name=$(basename "$(xdg-settings get default-web-browser)" .desktop)
-browser_name=${BROWSER:-$browser_name}
+# Show the browser's own name (e.g. "Firefox Developer Edition") rather than its desktop id
+browser_desktop=$(xdg-settings get default-web-browser 2>/dev/null)
+IFS=: read -ra data_dirs <<<"${XDG_DATA_HOME:-$HOME/.local/share}:${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
+for dir in "${data_dirs[@]}"; do
+    [[ -n $browser_desktop && -f $dir/applications/$browser_desktop ]] || continue
+    browser_name=$(sed -n 's/^Name=//p' "$dir/applications/$browser_desktop" | head -n 1)
+    break
+done
+browser_name=${BROWSER:-${browser_name:-$(basename "$browser_desktop" .desktop)}}
 rofi -modi "bookmarks:python $LIB_DIR/hyde/bookmarks.py \
 --list" -i \
-    -theme-str "entry { placeholder: \" 🌐 Launch: $browser_name \";}" \
+    -theme-str "entry { placeholder: \"󰃃 Launch: $browser_name\";}" \
     -config "${ROFI_BOOKMARK_STYLE:-clipboard}" \
     -theme-str "$r_override" \
     -theme-str "$font_override" \

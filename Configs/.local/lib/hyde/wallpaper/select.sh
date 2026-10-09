@@ -34,7 +34,7 @@ Wall_Select() {
         -theme-str "$font_override" \
         -theme-str "$r_override" \
         -theme "${ROFI_WALLPAPER_STYLE:-selector}" \
-        -select "$(basename "$(readlink "$wallSet")")")
+        -select "$(jq -rn --arg path "$(readlink "$wallSet")" "$WALL_LABEL_JQ"' $path | wall_label')")
     selected_thumbnail="$(awk -F ':::' '{print $3}' <<<"$entry")"
     selected_wallpaper_path="$(awk -F ':::' '{print $2}' <<<"$entry")"
     selected_wallpaper="$(awk -F ':::' '{print $1}' <<<"$entry")"

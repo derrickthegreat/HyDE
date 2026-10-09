@@ -69,7 +69,7 @@ _F = {description = "[Window Management] kill focused window"}
 hl.bind(MOD .. "+ ALT  + F4", hl.dsp.window.kill(), _F)
 _F = {description = "[Window Management] exit hyprland session"}
 hl.bind(MOD .. " + Delete", hl.dsp.exit(), _F)
-_F = {description = "[Window Management] toggle float true"}
+_F = {description = "[Window Management] toggle floating"}
 hl.bind(MOD .. " + W", hl.dsp.window.float({action = "toggle"}), _F)
 _F = {description = "[Window Management] toggle group"}
 hl.bind(MOD .. " + G", hl.dsp.group.toggle(), _F)
@@ -178,9 +178,9 @@ _F = {description = "[Launcher|Rofi menus] clipboard manager"}
 hl.bind(MOD .. " + SHIFT + V", hl.dsp.exec_cmd(hyde.sh.menu.cliphist()), _F)
 _F = {description = "[Launcher|Rofi menus] select rofi launcher"}
 hl.bind(MOD .. " + SHIFT + A", hl.dsp.exec_cmd(hyde.sh.menu.select()), _F)
-_F = {description = "[Launcher|Rofi menus] Calculator"}
+_F = {description = "[Launcher|Rofi menus] calculator"}
 hl.bind(MOD .. " + SHIFT + K", hl.dsp.exec_cmd(hyde.sh.menu.calculator()), _F)
-_F = {description = "[Launcher|Rofi menus] Web Search"}
+_F = {description = "[Launcher|Rofi menus] web search"}
 hl.bind(MOD .. " + SHIFT + slash", hl.dsp.exec_cmd(hyde.sh.menu.search()), _F)
 
 -- $hc=Hardware Controls
@@ -196,7 +196,7 @@ _F = {description = "[Hardware Controls|Audio] decrease volume", locked = true, 
 hl.bind("F11", hl.dsp.exec_cmd(hyde.sh.volumecontrol("-o", "d")), _F)
 _F = {description = "[Hardware Controls|Audio] increase volume", locked = true, repeating = true}
 hl.bind("F12", hl.dsp.exec_cmd(hyde.sh.volumecontrol("-o", "i")), _F)
-_F = {description = "[Hardware Controls|Audio] un/mmute output", locked = true}
+_F = {description = "[Hardware Controls|Audio] un/mute output", locked = true}
 hl.bind("XF86AudioMute", hl.dsp.exec_cmd(hyde.sh.volumecontrol("-o", "m")), _F)
 _F = {description = "[Hardware Controls|Audio] un/mute microphone", locked = true}
 hl.bind("XF86AudioMicMute", hl.dsp.exec_cmd(hyde.sh.volumecontrol("-i", "m")), _F)

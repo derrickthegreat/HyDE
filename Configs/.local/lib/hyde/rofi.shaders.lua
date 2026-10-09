@@ -25,7 +25,7 @@ local item, err = sh.select({
     current_icon = current_icon,
     current_row = current_row,
     prompt = "Select shader",
-    placeholder = "Shaders..."
+    placeholder = "󱕅 Shaders..."
 })
 if err then
     io.stderr:write("Error: " .. tostring(err) .. "\n")

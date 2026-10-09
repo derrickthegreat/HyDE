@@ -32,15 +32,16 @@ do
     assetFile="${file/rofi\/themes/rofi\/assets}"
     assetFile="${assetFile%.rasi}.png"
     echo -en "$baseName\x00icon\x1f$assetFile\n"
-done | sort -n | rofi -dmenu \
+done | sort -V | rofi -dmenu \
     -theme-str "$font_override" \
     -theme-str "$r_override" \
     -theme "${ROFI_SELECT_STYLE:-selector}" \
     -select "$rofiStyle")
 if [ -n "$RofiSel" ]; then
     set_conf "rofiStyle" "$RofiSel"
-    notify-send -a "HyDE Alert" -h string:x-canonical-private-synchronous:hyde.rofi-style -t 2200 -i "$rofiAssetDir/$RofiSel.png" " style $RofiSel applied..."
+    notify-send -a "HyDE Alert" -h string:x-canonical-private-synchronous:hyde.rofi-style -t 2200 -i "$rofiAssetDir/$RofiSel.png" "Launcher style ${RofiSel#style_} applied"
 fi
 if [ -n "$ROFI_LAUNCH_STYLE" ]; then
-    notify-send -a "HyDE Alert" -h string:x-canonical-private-synchronous:hyde.rofi-style -u critical "Style: '$ROFI_LAUNCH_STYLE' is explicitly set, remove it in ~/.config/hyde/config.toml for changes to take effect."
+    notify-send -a "HyDE Alert" -h string:x-canonical-private-synchronous:hyde.rofi-style -u critical "Launcher style is pinned" \
+        "'$ROFI_LAUNCH_STYLE' is set in ~/.config/hyde/config.toml. Remove it for this choice to take effect."
 fi

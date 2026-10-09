@@ -21,7 +21,7 @@ local selected =
         current_name = current_name,
         current_icon = current_icon,
         prompt = "Select layout",
-        placeholder = "Layouts..."
+        placeholder = "󱒎 Layouts..."
     }
 )
 

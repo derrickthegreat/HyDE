@@ -45,10 +45,19 @@ font_name=${font_name:-$(get_hyprConf "FONT")}
 font_override="* {font: \"${font_name:-"JetBrainsMono Nerd Font"} $font_scale\";}"
 icon_override=$(gsettings get org.gnome.desktop.interface icon-theme | sed "s/'//g")
 icon_override="configuration {icon-theme: \"$icon_override\";}"
-selected=$(printf '%s\n' "$output" | rofi -dmenu -markup -markup-rows -p \
-    -theme-str "entry { placeholder: \"\t⌨️ Keybindings \";}" \
-    " Keybinds \t\t󰠗 Description" \
-    -p -i \
+# Column labels for the message line, padded to the key column the generator pads
+delimiter=${ROFI_KEYBIND_HINT_DELIMITER:->}
+first_row=$(awk -F ' ::: ' 'NF >= 5 {print $1; exit}' <<<"$output")
+key_column=$(sed -E 's|^<tt>(.*)</tt>.*|\1|; s/&lt;/</g; s/&gt;/>/g; s/&amp;/\&/g' <<<"$first_row")
+key_column=${key_column% "$delimiter"}
+header="<tt>$(printf '%-*s %s' "${#key_column}" "Keys" "$delimiter" | sed 's/&/\&amp;/g; s/</\&lt;/g')</tt> Description"
+# The default style has no message slot, so put one above the list
+[[ -z $ROFI_KEYBIND_HINT_STYLE ]] &&
+    r_override+="listbox { children: [ \"message\", \"listview\", \"dummy\" ]; } message { padding: 0.5em 1em 0em 1em; background-color: transparent; } textbox { background-color: transparent; text-color: @main-fg; }"
+selected=$(printf '%s\n' "$output" | rofi -dmenu -markup -markup-rows -i \
+    -p "Keybindings" \
+    -mesg "$header" \
+    -theme-str "entry { placeholder: \"󰌌 Keybindings\";}" \
     -display-columns 1 \
     -display-column-separator ":::" \
     -theme-str "$font_override" \

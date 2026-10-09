@@ -168,9 +168,9 @@ cliphist_cmd() {
 }
 show_history() {
     local selected_item
-    rofi_args=(" 📜 ${_T["History..."]:-History...}" -multi-select -i -display-columns 2 -selected-row 2)
+    rofi_args=("󰋚 ${_T["History..."]:-History...}" -multi-select -i -display-columns 2 -selected-row 2)
     if [[ $CLIPHIST_IMAGE_HISTORY == true ]]; then
-        rofi_args=(" 🏞️ ${_T["Image History | Alt+S to Scan"]:-Image History | Alt+S to Scan}" -display-columns 2
+        rofi_args=("󰋯 ${_T["Image History | Alt+S to Scan"]:-Image History | Alt+S to Scan}" -display-columns 2
             -show-icons -eh 3
             -theme-str 'listview { lines: 4; columns: 2; }'
             -theme-str 'element { enabled: true; orientation: vertical; spacing: 0%; padding: 0%; cursor: pointer; background-color: transparent; text-color: @main-fg; horizontal-align: 0.5; }'
@@ -196,7 +196,7 @@ show_history() {
 
 delete_items() {
     local selected_item
-    selected_item="$(cliphist_list | run_rofi " 🗑️ ${_T["Delete"]:-Delete}" -multi-select -i -display-columns 2)"
+    selected_item="$(cliphist_list | run_rofi "󰧧 ${_T["Delete"]:-Delete}" -multi-select -i -display-columns 2)"
     handle_special_commands "${selected_item##*$'\n'}"
     process_deletion <<< "$selected_item"
 }
@@ -206,7 +206,7 @@ view_favorites() {
         return
     }
     local selected_item
-    selected_item=$(printf "%s\n" "${decoded_lines[@]}" | run_rofi "📌 ${_T["View Favorites"]:-View Favorites}") || exit 0
+    selected_item=$(printf "%s\n" "${decoded_lines[@]}" | run_rofi "󰓒 ${_T["View Favorites"]:-View Favorites}") || exit 0
     if [ -n "$selected_item" ]; then
         handle_special_commands "${selected_item##*$'\n'}"
         local index
@@ -224,7 +224,7 @@ view_favorites() {
 add_to_favorites() {
     ensure_favorites_dir
     local item
-    item=$(cliphist_list | run_rofi "➕ ${_T["Add to Favorites..."]:-Add to Favorites...}" -display-columns 2) || exit 0
+    item=$(cliphist_list | run_rofi "󱕧 ${_T["Add to Favorites..."]:-Add to Favorites...}" -display-columns 2) || exit 0
     if [ -n "$item" ]; then
         local full_item
         full_item=$(echo "$item" | cliphist decode)
@@ -244,7 +244,7 @@ delete_from_favorites() {
         return
     }
     local selected_favorite
-    selected_favorite=$(printf "%s\n" "${decoded_lines[@]}" | run_rofi "➖ ${_T["Remove from Favorites..."]:-Remove from Favorites...}") || exit 0
+    selected_favorite=$(printf "%s\n" "${decoded_lines[@]}" | run_rofi "󱕨 ${_T["Remove from Favorites..."]:-Remove from Favorites...}") || exit 0
     if [ -n "$selected_favorite" ]; then
         local index
         index=$(printf "%s\n" "${decoded_lines[@]}" | grep -nxF "$selected_favorite" | cut -d: -f1)
@@ -265,7 +265,7 @@ clear_favorites() {
     if [ -f "$favorites_file" ] && [ -s "$favorites_file" ]; then
         local confirm
         local yes_str="${_T["Yes"]:-Yes}"
-        confirm=$(echo -e "${yes_str}\n${_T["No"]:-No}" | run_rofi "☢️ ${_T["Clear All Favorites?"]:-Clear All Favorites?}") || exit 0
+        confirm=$(echo -e "${yes_str}\n${_T["No"]:-No}" | run_rofi "󱕩 ${_T["Clear All Favorites?"]:-Clear All Favorites?}") || exit 0
         if [ "$confirm" = "$yes_str" ]; then
             : > "$favorites_file"
             clip_notify "${_T["All favorites have been deleted."]:-All favorites have been deleted.}"
@@ -280,7 +280,7 @@ manage_favorites() {
     local opt_clr="${_T["Clear All Favorites"]:-Clear All Favorites}"
 
     local manage_action
-    manage_action=$(echo -e "${opt_add}\n${opt_del}\n${opt_clr}" | run_rofi "📓 ${_T["Manage Favorites"]:-Manage Favorites}") || exit 0
+    manage_action=$(echo -e "${opt_add}\n${opt_del}\n${opt_clr}" | run_rofi "󱙩 ${_T["Manage Favorites"]:-Manage Favorites}") || exit 0
     case "$manage_action" in
         "$opt_add")
             add_to_favorites
@@ -301,7 +301,7 @@ manage_favorites() {
 clear_history() {
     local selected_item
     local yes_str="${_T["Yes"]:-Yes}"
-    selected_item=$(echo -e "${yes_str}\n${_T["No"]:-No}" | run_rofi "☢️ ${_T["Clear Clipboard History?"]:-Clear Clipboard History?}")
+    selected_item=$(echo -e "${yes_str}\n${_T["No"]:-No}" | run_rofi "󰱢 ${_T["Clear Clipboard History?"]:-Clear Clipboard History?}")
     handle_special_commands "${selected_item##*$'\n'}"
     if [ "$selected_item" = "$yes_str" ]; then
         cliphist wipe
@@ -378,7 +378,7 @@ main() {
         # No arguments provided, show menu
         local main_action
         main_action=$(
-            main_menu_options | run_rofi "🔎 ${_T["Options (Alt O)"]:-Options (Alt O)}" \
+            main_menu_options | run_rofi "󰢻 ${_T["Options (Alt O)"]:-Options (Alt O)}" \
                 -display-column-separator ":::" \
                 -display-columns 1,2 \
                 -markup-rows
