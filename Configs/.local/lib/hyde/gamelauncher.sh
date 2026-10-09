@@ -13,7 +13,7 @@ else
     argparse_header "HyDE Game Launcher"
 
     argparse "--style,-s" "STYLE" "Specify the style" "parameter"
-    argparse "--backend,-b" "BACKEND" "Specify the backend" "parameter"
+    argparse "--backend,-b" "BACKEND" "Specify the backend: steam, lutris or heroic (default: all of them)" "parameter"
 
     argparse_finalize
 
@@ -65,6 +65,9 @@ case "$backend" in
     lutris)
         backend_command=("${XDG_STATE_HOME:-$HOME/.local/state}/hyde/python_env/bin/python" "$LIB_DIR/hyde/gamelauncher/lutris.py" --rofi-string)
         ;;
+    heroic)
+        backend_command=("${XDG_STATE_HOME:-$HOME/.local/state}/hyde/python_env/bin/python" "$LIB_DIR/hyde/gamelauncher/heroic.py" --rofi-string)
+        ;;
     *)
         backend_command=("${XDG_STATE_HOME:-$HOME/.local/state}/hyde/python_env/bin/python" "$LIB_DIR/hyde/gamelauncher/catalog.py" --rofi-string)
         rofi_args=(-markup-rows)
@@ -86,7 +89,7 @@ cmd=${selected#*$'\t'}
 # <slug>"`), not a single argv -- a plain, quoted exec would try to run that
 # whole string as one program name and always fail. eval is what actually
 # parses it as shell syntax; the backends (steam.py: a regex-validated
-# numeric appid, lutris.py: a slug checked against ^[a-z0-9-]+$) are
-# responsible for making sure nothing unexpected ends up in this string in
-# the first place.
+# numeric appid, lutris.py: a slug checked against ^[a-z0-9-]+$, heroic.py:
+# a store id checked against [A-Za-z0-9._-]+) are responsible for making sure
+# nothing unexpected ends up in this string in the first place.
 eval exec "$cmd"

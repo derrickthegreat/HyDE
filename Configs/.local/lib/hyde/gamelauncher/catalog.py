@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Merged catalog for gamelauncher: combine Steam and Lutris entries into one JSON/rofi stream.
+Merged catalog for gamelauncher: combine Steam, Lutris and Heroic entries into one JSON/rofi stream.
 
 Outputs:
   --json : prints array of {backend, id, name, display_name, header, install_dir}
@@ -26,16 +26,14 @@ def fetch_entries(command):
         return []
 
 
-def merge_entries(steam_entries, lutris_entries):
+def merge_entries(entries_by_backend):
     merged = []
     name_map = defaultdict(list)
 
-    for entry in steam_entries:
-        entry["backend"] = "steam"
-        name_map[entry["name"].lower()].append(entry)
-    for entry in lutris_entries:
-        entry["backend"] = "lutris"
-        name_map[entry["name"].lower()].append(entry)
+    for backend, entries in entries_by_backend.items():
+        for entry in entries:
+            entry["backend"] = backend
+            name_map[entry["name"].lower()].append(entry)
 
     for name, entries in name_map.items():
         for entry in entries:
@@ -59,10 +57,10 @@ def main():
     args = parser.parse_args()
 
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    steam_entries = fetch_entries(["python", os.path.join(script_dir, "steam.py"), "--json"])
-    lutris_entries = fetch_entries(["python", os.path.join(script_dir, "lutris.py"), "--json"])
-
-    merged = merge_entries(steam_entries, lutris_entries)
+    merged = merge_entries({
+        backend: fetch_entries(["python", os.path.join(script_dir, f"{backend}.py"), "--json"])
+        for backend in ("steam", "lutris", "heroic")
+    })
 
     if args.json:
         print(json.dumps(merged, indent=4))

@@ -100,7 +100,10 @@ def read_games_from_db(db_path: Path) -> List[Dict]:
     games = []
 
     try:
-        cur.execute("SELECT id, name, slug, runner, prefix, IFNULL(icon, '') as icon FROM games")
+        # Lutris keeps uninstalled games in its library with installed = 0
+        cur.execute("PRAGMA table_info(games)")
+        only_installed = " WHERE installed = 1" if "installed" in [c[1] for c in cur.fetchall()] else ""
+        cur.execute(f"SELECT id, name, slug, runner, prefix, IFNULL(icon, '') as icon FROM games{only_installed}")
         rows = cur.fetchall()
         for r in rows:
             games.append(
@@ -145,7 +148,8 @@ def read_games_from_db(db_path: Path) -> List[Dict]:
                     select_cols.append(c)
             if not select_cols:
                 continue
-            cur.execute(f"SELECT {', '.join(select_cols)} FROM {tbl}")
+            only_installed = " WHERE installed = 1" if "installed" in col_names else ""
+            cur.execute(f"SELECT {', '.join(select_cols)} FROM {tbl}{only_installed}")
             for r in cur.fetchall():
                 row = dict(zip(select_cols, r))
                 games.append(

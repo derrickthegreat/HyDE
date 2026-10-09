@@ -3,7 +3,8 @@
 Steam library inspector for gamelauncher.sh
 
 - Finds Steam library folders (native and flatpak common paths)
-- Reads appmanifest_*.acf files to list installed Steam apps
+- Reads appmanifest_*.acf files to list installed Steam apps, skipping manifests
+  whose game folder is gone
 - CLI:
     --detect  -> print list of steam apps directories found (JSON)
     --json    -> print JSON array of games {appid, name, install_dir, header_image}
@@ -90,15 +91,18 @@ def find_steam_roots() -> List[Path]:
 
 
 def parse_acf(acf_path: Path) -> Dict:
-    data = {"appid": None, "name": None}
+    data = {"appid": None, "name": None, "installdir": None}
     try:
         txt = acf_path.read_text(errors="ignore")
         m_id = re.search(r'"appid"\s*"(\d+)"', txt)
         m_name = re.search(r'"name"\s*"([^"]+)"', txt)
+        m_dir = re.search(r'"installdir"\s*"([^"]+)"', txt)
         if m_id:
             data["appid"] = int(m_id.group(1))
         if m_name:
             data["name"] = m_name.group(1)
+        if m_dir:
+            data["installdir"] = m_dir.group(1)
     except Exception:
         pass
     return data
@@ -122,6 +126,12 @@ def fetch_icon(appid: int, cache_dir: Path) -> str:
         except Exception as e:
             print(f"Error fetching icon for AppID {appid}: {e}", file=sys.stderr)
     return str(icon_path) if icon_path.is_file() else ""
+
+
+def is_installed(steamapps: Path, info: Dict) -> bool:
+    """A manifest alone doesn't mean the game is there: Steam can leave one behind after uninstalling."""
+    installdir = info.get("installdir")
+    return bool(installdir) and (steamapps / "common" / installdir).is_dir()
 
 
 def should_exclude_game(name: str) -> bool:
@@ -215,7 +225,7 @@ def list_games(steamapps_dirs: List[Path], fetch_icons: bool = False) -> List[Di
         try:
             for p in sa.glob("appmanifest_*.acf"):
                 info = parse_acf(p)
-                if not info.get("appid") or should_exclude_game(info.get("name", "")):
+                if not info.get("appid") or should_exclude_game(info.get("name", "")) or not is_installed(sa, info):
                     continue
                 appid = info["appid"]
                 name = info.get("name") or ""
@@ -255,7 +265,7 @@ def fetch_all_icons(steamapps_dirs: List[Path]) -> None:
         try:
             for p in sa.glob("appmanifest_*.acf"):
                 info = parse_acf(p)
-                if not info.get("appid") or should_exclude_game(info.get("name", "")):
+                if not info.get("appid") or should_exclude_game(info.get("name", "")) or not is_installed(sa, info):
                     continue
                 appid = info["appid"]
                 fetch_icon(appid, cache_dir)
