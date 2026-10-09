@@ -309,7 +309,8 @@ def main() -> int:
     if not sink_ids:
         if os.environ.get("HYPRLAND_INSTANCE_SIGNATURE"):
             _notify(
-                "No sink input available.",
+                "Nothing to mute",
+                body=f"{label} isn't playing audio",
                 app_name="HyDE Alert",
                 tag="volume",
                 expire_time=1200,
@@ -327,7 +328,7 @@ def main() -> int:
     if errors:
         print(f"PulseAudio failed to set '{failed_id}' to '{state_msg}'.", file=sys.stderr)
         _notify(
-            f"Failed to set '{failed_id}' to '{state_msg}'!",
+            f"Couldn't {'mute' if want_mute else 'unmute'} {label}",
             app_name="HyDE Alert",
             tag="volume",
             expire_time=1200,

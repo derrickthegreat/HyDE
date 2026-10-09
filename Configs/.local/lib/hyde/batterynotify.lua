@@ -319,22 +319,21 @@ end
                 local urgency = (percentage <= conf.battery_low_threshold) and 'CRITICAL' or 'NORMAL'
                 local steps = math.floor(((percentage + 5) / 10) + 0.00001) * 10
                 local icon = 'battery-level-' .. tostring((steps > 0) and steps or 10) .. '-symbolic'
-                notify_send('Charger Plug Out', string.format('Battery is at %d%%.', percentage),
+                notify_send('Charger Disconnected', string.format('Battery is at %d%%.', percentage),
                     { urgency = urgency, icon = icon, synchronous = 'hyde.battery' })
                 if conf.execute_discharging ~= '' then run_cmd_shell(conf.execute_discharging) end
             end
         elseif starts_with(tostring(status), 'Not') or starts_with(tostring(status), 'Charging') then
             if prev_status == 'Discharging' or (prev_status and starts_with(prev_status, 'Not')) then
                 prev_status = status
-                local urgency = (percentage >= conf.unplug_charger_threshold) and 'CRITICAL' or 'NORMAL'
                 local steps = math.floor(((percentage + 5) / 10) + 0.00001) * 10
                 -- Matches the battery-level-N-symbolic pattern already used below for
                 -- the discharging icons: freedesktop's icon-naming spec has no plain
                 -- "battery-N-charging" name, so themes that only ship the level-based
                 -- set (e.g. Tela-circle-dracula) rendered no icon at all (#798).
                 local icon = 'battery-level-' .. tostring((steps > 0) and steps or 100) .. '-charging-symbolic'
-                notify_send('Charger Plug In', string.format('Battery is at %d%%.', percentage),
-                    { urgency = urgency, icon = icon, synchronous = 'hyde.battery' })
+                notify_send('Charger Connected', string.format('Battery is at %d%%.', percentage),
+                    { urgency = 'normal', icon = icon, synchronous = 'hyde.battery' })
                 if conf.execute_charging ~= '' then run_cmd_shell(conf.execute_charging) end
             end
         elseif status == 'Full' then
@@ -344,8 +343,8 @@ end
                 if prev_status and string.find(prev_status, 'harging') then do_notify = true end
                 if not do_notify and (now - lt) >= (conf.notify * 60) then do_notify = true end
                 if do_notify then
-                    notify_send('Battery Full', 'Please unplug your Charger',
-                        { urgency = 'critical', icon = 'battery-full-charging-symbolic', synchronous = 'hyde.battery' })
+                    notify_send('Battery Full', 'You can unplug the charger.',
+                        { urgency = 'normal', icon = 'battery-full-charging-symbolic', synchronous = 'hyde.battery' })
                     prev_status = status
                     lt = now
                     if conf.execute_charging ~= '' then run_cmd_shell(conf.execute_charging) end

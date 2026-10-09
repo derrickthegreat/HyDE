@@ -15,7 +15,8 @@ ocr_extract() {
 
     for pkg in "${tesseract_packages[@]}"; do
         if ! pkg_installed "$pkg"; then
-            notify-send -a "HyDE Alert" -h string:x-canonical-private-synchronous:hyde.ocr "$(echo -e "OCR: required package is not installed\n $pkg")" -e -i "dialog-error"
+            notify-send -a "HyDE Alert" -h string:x-canonical-private-synchronous:hyde.ocr -e -i "dialog-error" \
+                "OCR: required package is not installed" " $pkg"
             return 1
         fi
     done
@@ -35,6 +36,9 @@ ocr_extract() {
     )
 
     printf "%s" "$tesseract_output" | wl-copy
-    notify-send -a "HyDE Alert" "$(echo -e "OCR: ${#tesseract_output} symbols recognized\n\nLanguages used ${tesseract_languages[*]/#/'\n '}")" -i "$image_path" -e -h string:x-canonical-private-synchronous:hyde.ocr
+    local languages
+    languages=$(printf '%s, ' "${tesseract_languages[@]}")
+    notify-send -a "HyDE Alert" -h string:x-canonical-private-synchronous:hyde.ocr -e -i "$image_path" \
+        "OCR: ${#tesseract_output} characters recognized" "Languages: ${languages%, }"
 
 }

@@ -59,10 +59,8 @@ format = "<span size='250%%'>%s</span>\n%b"
 
 
 
+# Colours for critical notifications come from the wallbash section below
 [urgency_critical]
-background = "#f5e0dc"
-foreground = "#1e1e2e"
-frame_color = "#f38ba8"
 icon = "${iconsDir}/Wallbash-Icon/critical.svg"
 timeout = 0
 

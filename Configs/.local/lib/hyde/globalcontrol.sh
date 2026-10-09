@@ -152,6 +152,8 @@ get_hashmap() {
     unset wallList
     unset skipStrays
     unset filetypes
+    unset no_notify
+    unset no_wallpapers
     list_extensions() {
         supported_files=(
             "gif"
@@ -214,7 +216,9 @@ get_hashmap() {
             return 1
         else
             echo "ERROR: No image found in any source"
-            [ -n "$no_notify" ] && notify-send -a "HyDE Alert" "WARNING: No compatible wallpapers found in: ${no_wallpapers[*]}"
+            # Background callers such as the cache job pass --no-notify; interactive ones should hear about it
+            [ -z "$no_notify" ] && notify-send -a "HyDE Alert" -h string:x-canonical-private-synchronous:hyde.wallpaper \
+                "No wallpapers found" "$(printf '%s\n' "${no_wallpapers[@]/#"$HOME"/\~}")"
             exit 1
         fi
     fi

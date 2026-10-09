@@ -15,3 +15,10 @@ ${cacheDir}/wallbash/dunst.conf|${WALLBASH_SCRIPTS}/dunst.sh
     highlight = "#<wallbash_2xa6>"
     icon = "${iconsDir}/Wallbash-Icon/hyprdots.svg"
     timeout = 5
+
+# Inverts the normal scheme so critical notifications stand out; the red frame stays fixed
+[urgency_critical]
+    background = "#<wallbash_1xa8>E6"
+    foreground = "#<wallbash_1xa1>"
+    frame_color = "#f38ba8"
+    highlight = "#<wallbash_1xa4>"
