@@ -71,6 +71,8 @@ _F = {description = "[Window Management] exit hyprland session"}
 hl.bind(MOD .. " + Delete", hl.dsp.exit(), _F)
 _F = {description = "[Window Management] toggle floating"}
 hl.bind(MOD .. " + W", hl.dsp.window.float({action = "toggle"}), _F)
+_F = {description = "[Window Management] toggle float mode for all windows"}
+hl.bind(MOD .. " + ALT + W", hl.dsp.exec_cmd(hyde.sh.floatmode()), _F)
 _F = {description = "[Window Management] toggle group"}
 hl.bind(MOD .. " + G", hl.dsp.group.toggle(), _F)
 _F = {description = "[Window Management] set a window’s pseudotiling state"}
