@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+. "$(dirname "$0")/../fixture.sh"
+case "$1" in
+    -Qua) upgraded paru || show paru ;;
+    -Su) fake_upgrade paru ;;
+    *) echo "[fake paru] not faked: paru $*" >&2; exit 1 ;;
+esac

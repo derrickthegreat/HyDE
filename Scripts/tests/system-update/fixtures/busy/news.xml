@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0"><channel><title>Arch Linux: Recent news updates</title>
+<item><title>Example news that requires manual intervention</title><link>https://archlinux.org/news/example-manual-intervention/</link><pubDate>@NOW@</pubDate></item>
+<item><title>Old news from before your last update</title><link>https://archlinux.org/news/old/</link><pubDate>Mon, 06 Jan 2020 10:00:00 +0000</pubDate></item>
+</channel></rss>

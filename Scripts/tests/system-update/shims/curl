@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+. "$(dirname "$0")/../fixture.sh"
+case "$*" in
+    *archlinux.org/feeds/news*) show news.xml | sed "s/@NOW@/$(LC_ALL=C date -R)/" ;;
+    *) exit 22 ;;
+esac

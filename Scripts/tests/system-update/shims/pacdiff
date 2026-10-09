@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+. "$(dirname "$0")/../fixture.sh"
+show pacnew
+if upgraded pacman; then show pacnew-after-upgrade; fi

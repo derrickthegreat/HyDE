@@ -1,5 +1,6 @@
-"""Package manager metadata types."""
+"""Types and helpers shared by the package manager modules."""
 
+import re
 from dataclasses import dataclass
 
 
@@ -18,7 +19,27 @@ class PMMetadata:
     is_base: bool = False
     # Manager this one overrides (takes precedence when both available)
     overrides: tuple[str, ...] = ()
+    # Managers whose pending updates must be applied before this one's
+    requires: tuple[str, ...] = ()
 
 
 # Default metadata for managers that don't declare one
 DEFAULT_META = PMMetadata()
+
+# A pending update: (name, installed version, new version, download bytes).
+# The installed version is None when the update installs the package fresh,
+# and "" when the manager doesn't report it.
+UpdateEntry = tuple[str, str | None, str | None, int | None]
+
+_ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
+
+
+def parse_update_lines(output: str) -> list[UpdateEntry]:
+    """Parse `name old -> new` lines (pacman -Qu style), skipping ignored packages."""
+    entries: list[UpdateEntry] = []
+    for line in output.splitlines():
+        parts = _ANSI_RE.sub("", line).split()
+        if len(parts) < 4 or parts[2] != "->" or "[ignored]" in parts[4:]:
+            continue
+        entries.append((parts[0], parts[1], parts[3], None))
+    return entries

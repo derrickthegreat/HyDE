@@ -10,7 +10,7 @@ _BASE_DIR = _Path(__file__).resolve().parent
 if str(_BASE_DIR) not in sys.path:
     sys.path.insert(0, str(_BASE_DIR))
 
-from meta import PMMetadata
+from meta import PMMetadata, UpdateEntry
 
 PackageEntry = tuple[str, str | None, str | None, str | None]
 
@@ -79,6 +79,24 @@ def count_updates(ctx) -> int:
 
 def list_updates(ctx) -> None:
     ctx.run(["flatpak", "remote-ls", "--updates"], check=False)
+
+
+def get_updates(ctx) -> list[UpdateEntry]:
+    columns = "--columns=application,branch,version"
+    installed = {(app, branch): version for app, branch, version in _version_rows(ctx.capture(["flatpak", "list", columns], check=False))}
+    pending = _version_rows(ctx.capture(["flatpak", "remote-ls", "--updates", columns], check=False))
+    return [(app, installed.get((app, branch), ""), version, None) for app, branch, version in pending]
+
+
+def _version_rows(raw: str) -> list[tuple[str, str, str]]:
+    """Parse application/branch/version columns; flatpak drops the version column when it is empty."""
+    rows = []
+    for line in raw.splitlines():
+        parts = line.split("\t")
+        if len(parts) < 2 or not parts[0] or parts[0].startswith("Application"):
+            continue
+        rows.append((parts[0], parts[1], parts[2].strip() if len(parts) > 2 else ""))
+    return rows
 
 
 def _parse_table(raw: str) -> list[PackageEntry]:

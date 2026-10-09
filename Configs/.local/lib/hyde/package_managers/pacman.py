@@ -3,11 +3,16 @@
 from __future__ import annotations
 
 import os
+import re
 import shutil
+import subprocess
 from contextlib import contextmanager
+from datetime import datetime
+from email.utils import parsedate_to_datetime
 from pathlib import Path
 from tempfile import TemporaryDirectory, mktemp
 from typing import Iterator, Sequence
+from xml.etree import ElementTree
 
 import sys
 from pathlib import Path as _Path
@@ -15,10 +20,12 @@ _BASE_DIR = _Path(__file__).resolve().parent
 if str(_BASE_DIR) not in sys.path:
     sys.path.insert(0, str(_BASE_DIR))
 
-from meta import PMMetadata
+from meta import PMMetadata, UpdateEntry, parse_update_lines
 
 AUR_HELPERS = ("paru", "paru-bin", "yay", "yay-bin")
 PackageEntry = tuple[str, str | None, str | None, str | None]
+PACMAN_LOG = Path("/var/log/pacman.log")
+NEWS_FEED = "https://archlinux.org/feeds/news/"
 
 # Metadata: pacman is a base package manager with high priority
 META = PMMetadata(
@@ -116,6 +123,94 @@ def count_updates(ctx) -> int:
 def list_updates(ctx) -> None:
     with _checkupdates_env() as env:
         ctx.run(["checkupdates"], check=False, env=env)
+
+
+def get_updates(ctx) -> list[UpdateEntry]:
+    with _checkupdates_env() as env:
+        # checkupdates exits 2 when nothing is pending and 1 when it couldn't check
+        result = ctx.run(["checkupdates", "--nocolor"], check=False, capture=True, env=env)
+        if result.returncode not in (0, 2):
+            raise subprocess.CalledProcessError(result.returncode, result.args, result.stdout, result.stderr)
+        entries = parse_update_lines(result.stdout)
+        downloads = _pending_downloads(ctx, env["CHECKUPDATES_DB"]) if entries else {}
+    listed = {name for name, *_ in entries}
+    updates = [(name, old, new, downloads.get(name, (None, None))[1]) for name, old, new, _ in entries]
+    # New dependencies the upgrade pulls in show up in the download list only
+    updates.extend((name, None, version, size) for name, (version, size) in downloads.items() if name not in listed)
+    return updates
+
+
+def last_upgrade(ctx) -> float | None:
+    """Timestamp of the last full system upgrade, from the pacman log."""
+    stamp = None
+    try:
+        with PACMAN_LOG.open(encoding="utf-8", errors="replace") as log:
+            for line in log:
+                if "starting full system upgrade" in line:
+                    stamp = line[1:line.find("]")]
+    except OSError:
+        return None
+    return _parse_log_time(stamp) if stamp else None
+
+
+def news(ctx, since: float) -> list[tuple[float, str, str]]:
+    """Arch news published after `since`, newest first, as (timestamp, title, link)."""
+    feed = ctx.capture(["curl", "-fsSL", "--max-time", "5", NEWS_FEED], check=False)
+    try:
+        root = ElementTree.fromstring(feed)
+    except ElementTree.ParseError:
+        return []
+    items = []
+    for item in root.iter("item"):
+        try:
+            published = parsedate_to_datetime(item.findtext("pubDate", "")).timestamp()
+        except (TypeError, ValueError):
+            continue
+        if published > since:
+            items.append((published, item.findtext("title", "").strip(), item.findtext("link", "").strip()))
+    return items
+
+
+def pacnew_files(ctx) -> list[str]:
+    if not shutil.which("pacdiff"):
+        return []
+    return ctx.capture(["pacdiff", "--output"], check=False).splitlines()
+
+
+def orphans(ctx) -> list[str]:
+    return ctx.capture(["pacman", "-Qdtq"], check=False).split()
+
+
+def cache_savings(ctx) -> str | None:
+    """How much `paccache -r` would free, e.g. "1.2 GiB"."""
+    if not shutil.which("paccache"):
+        return None
+    match = re.search(r"disk space saved: ([^)]+)\)", ctx.capture(["paccache", "-d"], check=False))
+    return match.group(1) if match else None
+
+
+def _pending_downloads(ctx, db_path: str) -> dict[str, tuple[str, int]]:
+    """Map each package `pacman -Su` would fetch to (version, download bytes), using checkupdates' database."""
+    output = ctx.capture(
+        ["pacman", "-Sup", "--noconfirm", "--dbpath", db_path, "--logfile", "/dev/null", "--print-format", "%n %v %s"],
+        check=False,
+    )
+    downloads = {}
+    for line in output.splitlines():
+        parts = line.split()
+        if len(parts) == 3 and parts[2].isdigit():
+            downloads[parts[0]] = (parts[1], int(parts[2]))
+    return downloads
+
+
+def _parse_log_time(stamp: str) -> float | None:
+    # Current pacman logs ISO timestamps; entries from older versions use the short form
+    for fmt in ("%Y-%m-%dT%H:%M:%S%z", "%Y-%m-%d %H:%M"):
+        try:
+            return datetime.strptime(stamp, fmt).timestamp()
+        except ValueError:
+            continue
+    return None
 
 
 @contextmanager

@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+. "$(dirname "$0")/../fixture.sh"
+if [ -f "$fixture/checkupdates-exit" ]; then
+    echo "==> ERROR: Cannot fetch updates" >&2
+    exit "$(cat "$fixture/checkupdates-exit")"
+fi
+if upgraded pacman || [ ! -s "$fixture/checkupdates" ]; then
+    exit 2
+fi
+show checkupdates

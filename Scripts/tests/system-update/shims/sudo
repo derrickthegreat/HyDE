@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# The real sudo may reset PATH and reach the real pacman, so never call it.
+exec "$@"

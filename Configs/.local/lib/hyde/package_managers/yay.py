@@ -10,7 +10,7 @@ _BASE_DIR = _Path(__file__).resolve().parent
 if str(_BASE_DIR) not in sys.path:
     sys.path.insert(0, str(_BASE_DIR))
 
-from meta import PMMetadata
+from meta import PMMetadata, UpdateEntry, parse_update_lines
 
 PackageEntry = tuple[str, str | None, str | None, str | None]
 
@@ -21,6 +21,7 @@ META = PMMetadata(
     priority=20,
     conflicts=("paru", "paru-bin"),
     overrides=(),
+    requires=("pacman",),
 )
 
 # pacman.py will declare it overrides yay/paru
@@ -99,6 +100,10 @@ def count_updates(ctx) -> int:
 
 def list_updates(ctx) -> None:
     ctx.run(["yay", "-Qua"], check=False)
+
+
+def get_updates(ctx) -> list[UpdateEntry]:
+    return parse_update_lines(ctx.capture(["yay", "-Qua", "--color=never"], check=False))
 
 
 def _color_flag(ctx) -> str:

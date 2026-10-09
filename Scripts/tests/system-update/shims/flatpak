@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+. "$(dirname "$0")/../fixture.sh"
+case "$1" in
+    remote-ls) upgraded flatpak || show flatpak-updates ;;
+    list) show flatpak-installed ;;
+    update) fake_upgrade flatpak ;;
+    *) echo "[fake flatpak] not faked: flatpak $*" >&2; exit 1 ;;
+esac
