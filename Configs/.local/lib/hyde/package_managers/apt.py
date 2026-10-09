@@ -78,11 +78,11 @@ def list_installed(ctx) -> list[PackageEntry]:
 
 
 def is_installed(ctx, package: str) -> bool:
-    return ctx.run(["dpkg", "-l", package], check=False).returncode == 0
+    return ctx.run(["dpkg", "-l", package], check=False, capture=True).returncode == 0
 
 
-def file_query(ctx, target: str) -> None:
-    ctx.run(["apt-file", "search", target])
+def file_query(ctx, target: str) -> int:
+    return ctx.run(["apt-file", "search", target], check=False).returncode
 
 
 def count_updates(ctx) -> int:

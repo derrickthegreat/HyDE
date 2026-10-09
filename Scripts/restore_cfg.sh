@@ -285,11 +285,11 @@ hyprland_hook() {
 
 
 uv_hook() {
-	print_log -g "[uv]" -b " :: " "Checking uv availability..."
+	print_log -g "[UV]" -b " :: " "Checking uv availability..."
 	if command -v uv &>/dev/null; then
 		return 0
 	fi
-	print_log -warn "[uv]" "uv not found, installing..."
+	print_log -warn "UV" "uv not found, installing..."
 	if [[ -x "${pacmanCmd}" ]]; then
 		"${pacmanCmd}" install --no-confirm uv || true
 	elif command -v pacman &>/dev/null; then
@@ -358,14 +358,14 @@ hyprland_hook
 
 uv_hook
 
-print_log -g "[python env]" -b " :: " "Rebuilding HyDE Python environment..."
+print_log -g "[PYTHON]" -b " :: " "Rebuilding HyDE Python environment..."
 if command -v hyde-shell >/dev/null 2>&1; then
 	hyde-shell pyinit
 else
 	"${HOME}/.local/bin/hyde-shell" pyinit
 fi
 
-print_log -g "[version]" -b " :: " "saving version info..."
+print_log -g "[VERSION]" -b " :: " "saving version info..."
 "${scrDir}/version.sh" --cache || echo "Failed to save version info."
 
 state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/hyde"

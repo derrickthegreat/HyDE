@@ -146,15 +146,20 @@ USAGE() {
     printf '  %sCOMMANDS%s\n' "$_BOLD" "$_R"
     local cmds=(
         'help, -h [topic]' 'Show help (or topic-specific help)'
+        'man <topic>' 'Show a man-style page for a command or script'
         '-r, reload' 'Reload HyDE'
-        '-s, scripts' 'List available scripts (formatted)'
+        '-s, scripts' 'List available scripts'
+        'app <args>' 'Launch an application through app.sh'
         'wallbash <script>' 'Execute a wallbash script'
         'version, -v' 'Show version information'
         'release-notes' 'Show release notes'
-        'completion <subcmd>' 'Completion utilities (--list-builtins|--list-script|--list-script-path|bash|zsh|fish)'
+        'completion <shell>' 'Shell completion (bash|zsh|fish, --list-*)'
         'validate [args]' 'Validate HyDE configuration'
-        'pyinit' 'Initialize Python virtual environment'
-        'uv <cmd> [pkg]' 'Manage packages (install|uninstall|list)'
+        'pyinit' 'Initialize the Python environment'
+        'uv <cmd> [pkg]' 'Manage Python packages (install|uninstall|list)'
+        'luainit' 'Initialize the Lua environment'
+        'luarocks <cmd>' 'Manage Lua packages (install|remove|list|search|show)'
+        'pypr <cmd>' 'Pyprland helper (toggle|show|hide|expose|reload)'
         'init' 'Source initialization script'
         'logout' 'Log out of the current session'
         'lock-session' 'Lock the current session'
@@ -307,6 +312,10 @@ run_command() {
         [[ -d "$dir" ]] && SCRIPT_DIRS+=("$dir")
     done
 
+    # `pm` is the Python rewrite. pm.sh stays for the installer and pkg_installed,
+    # which call it by name, but would otherwise win here as the shell script.
+    [[ $1 == pm ]] && set -- pm.py "${@:2}"
+
     # Lua is resolved before shell, so a script left behind by an older release
     # cannot shadow the implementation that replaced it.
     for dir in "${SCRIPT_DIRS[@]}"; do
@@ -340,10 +349,32 @@ run_command() {
     if [[ -f "$1" && -x "$1" ]]; then
         exec "$1" "${@:2}"
     else
-        echo "Command not found: $1"
-        echo "Available commands:"
-        list_scripts_pretty
+        suggest_command "$1" >&2
+        exit 1
     fi
+}
+
+# Points a mistyped command at the closest builtins and scripts instead of
+# dumping the whole script list.
+suggest_command() {
+    local builtins=(app completion help init lock-session logout luainit luarocks man pyinit pypr
+        release-notes reload scripts uv validate version wallbash)
+    local matches
+    matches=$({
+        printf '%s\n' "${builtins[@]}"
+        list_script_path | sed -E 's|.*/||; s/\.(sh|py|lua)$//'
+    } | python3 -c '
+import difflib, sys
+names = sorted(set(sys.stdin.read().split()))
+print("\n".join(difflib.get_close_matches(sys.argv[1], names, n=3, cutoff=0.6)))
+' "$1" 2>/dev/null)
+
+    printf "hyde-shell: '%s' is not a command or script.\n" "$1"
+    if [[ -n "$matches" ]]; then
+        printf 'Did you mean:\n'
+        printf '    %s\n' $matches
+    fi
+    printf "Run 'hyde-shell -s' to list scripts, or 'hyde-shell --help' for commands.\n"
 }
 
 run_uv() {
@@ -437,53 +468,38 @@ list_scripts_pretty() {
     printf '  %s%s%s\n' "$_DIM" "$sep" "$_R"
 
     for dir in "${SCRIPT_DIRS[@]}"; do
-        local scripts=()
-        while IFS= read -r f; do
-            [[ -n "$f" ]] && scripts+=("$f")
-        done < <(find -L "$dir" -maxdepth 1 -type f \( -name "*.sh" -o -name "*.py" \) -exec basename {} \; 2>/dev/null | sort)
+        # Script names as hyde-shell runs them: no extension, one entry per name
+        local names=()
+        mapfile -t names < <(find -L "$dir" -maxdepth 1 -type f \( -name "*.sh" -o -name "*.py" -o -name "*.lua" \) \
+            -printf '%f\n' 2>/dev/null | sed -E 's/\.(sh|py|lua)$//' | sort -u)
 
-        [[ ${#scripts[@]} -eq 0 ]] && continue
+        [[ ${#names[@]} -eq 0 ]] && continue
         printf '\n  %s%s%s\n' "$_VIOLET" "$dir" "$_R"
 
-        unset groups roots
-        declare -A groups roots
-
-        for s in "${scripts[@]}"; do
-            local name="${s%.*}"
-            if [[ "$name" == *.* ]]; then
-                local root="${name%%.*}"
-                roots["$root"]=1
-            fi
+        # Group "theme.switch", "theme.select", ... under "theme"
+        unset groups
+        declare -A groups
+        for name in "${names[@]}"; do
+            groups["${name%%.*}"]+="$name "
         done
 
-        for s in "${scripts[@]}"; do
-            local name="${s%.*}"
-            if [[ "$name" == *.* ]]; then
-                local root="${name%%.*}"
-                groups["$root"]+="$name "
-            else
-                if [[ -n "${roots[$name]}" ]]; then
-                    groups["$name"]="$name ${groups[$name]}"
-                else
-                    groups["$name"]="$name"
-                fi
-            fi
-        done
-
+        # Green names are runnable; a dim heading only gathers related scripts
         for key in $(printf "%s\n" "${!groups[@]}" | sort); do
             read -ra items <<<"${groups[$key]}"
-            if [[ ${#items[@]} -gt 1 ]]; then
-                printf "    %s%s%s\n" "$_GREEN" "$key" "$_R"
-                for item in "${items[@]}"; do
-                    if [[ "$item" != "$key" ]]; then
-                        printf "      %s%s%s\n" "$_DIM" "$item" "$_R"
-                    fi
-                    ((total++))
-                done
+            if [[ ${#items[@]} -eq 1 ]]; then
+                printf "    %s%s%s\n" "$_GREEN" "${items[0]}" "$_R"
             else
-                printf "    %s%s%s\n" "$_GREEN" "$key" "$_R"
-                ((total++))
+                if [[ "${items[0]}" == "$key" ]]; then
+                    printf "    %s%s%s\n" "$_GREEN" "$key" "$_R"
+                else
+                    printf "    %s%s%s\n" "$_DIM" "$key" "$_R"
+                fi
+                for item in "${items[@]}"; do
+                    [[ "$item" == "$key" ]] && continue
+                    printf "      %s%s%s\n" "$_GREEN" "$item" "$_R"
+                done
             fi
+            ((total += ${#items[@]}))
         done
     done
 

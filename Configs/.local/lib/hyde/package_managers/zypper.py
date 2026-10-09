@@ -75,10 +75,10 @@ def list_installed(ctx) -> list[PackageEntry]:
     return entries
 
 def is_installed(ctx, package: str) -> bool:
-    return ctx.run(["rpm", "-q", package], check=False).returncode == 0
+    return ctx.run(["rpm", "-q", package], check=False, capture=True).returncode == 0
 
-def file_query(ctx, target: str) -> None:
-    ctx.run(["zypper", "wp", target])
+def file_query(ctx, target: str) -> int:
+    return ctx.run(["zypper", "wp", target], check=False).returncode
 
 def count_updates(ctx) -> int:
     # zypper list-updates returns a table, skip header lines

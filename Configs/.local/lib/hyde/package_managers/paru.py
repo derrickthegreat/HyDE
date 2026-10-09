@@ -22,6 +22,7 @@ META = PMMetadata(
     conflicts=("yay", "yay-bin"),
     overrides=(),
     requires=("pacman",),
+    extends=("pacman",),
 )
 
 # pacman.py will declare it overrides yay/paru
@@ -85,11 +86,11 @@ def list_installed(ctx) -> list[PackageEntry]:
 
 
 def is_installed(ctx, package: str) -> bool:
-    return ctx.run(["paru", "-Q", package], check=False).returncode == 0
+    return ctx.run(["paru", "-Q", package], check=False, capture=True).returncode == 0
 
 
-def file_query(ctx, target: str) -> None:
-    ctx.run(["paru", "-F", "--", target])
+def file_query(ctx, target: str) -> int:
+    return ctx.run(["paru", "-F", "--", target], check=False).returncode
 
 
 def count_updates(ctx) -> int:

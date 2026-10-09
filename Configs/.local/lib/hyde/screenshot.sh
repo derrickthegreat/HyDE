@@ -9,7 +9,7 @@ fi
 [[ -f "${LIB_DIR}/hyde/shutils/l10n.sh" ]] && source "${LIB_DIR}/hyde/shutils/l10n.sh"
 
 USAGE() {
-    cat <<"USAGE"
+    cat <<USAGE
 
 	Usage: $(basename "$0") [option]
 	Options:

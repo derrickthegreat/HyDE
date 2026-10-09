@@ -1,31 +1,38 @@
 #!/usr/bin/env bash
 set -eu
 export LC_ALL=C
+# How the user invoked us, for usage text: "hyde-shell pm.sh" or "pm.sh", never a full path.
+# Plain `hyde-shell pm` runs pm.py.
+prog_name() {
+    if [ "${HYDE_SHELL_INIT-}" = 1 ]; then
+        echo "hyde-shell pm.sh"
+    else
+        basename "$0"
+    fi
+}
 usage() {
     echo "Package manager wrapper (supports: $PMS)"
     echo
-    echo "Usage: $0 <command>"
+    echo "Usage: $(prog_name) [flags] <command> [args]"
     echo
     echo "Commands:"
-    echo "  i,  install          Interactively select packages to install."
-    echo "  i,  install <pkg>... Install one or more packages."
-    echo "  r,  remove           Interactively select packages to remove."
-    echo "  r,  remove <pkg>...  Remove one or more packages."
-    echo "  u,  upgrade          Upgrade all installed packages."
-    echo "  f,  fetch            Update local package database."
-    echo "  n,  info <pkg>       Print package information."
-    echo "  la, list all         List all packages."
-    echo "  li, list installed   List installed packages."
-    echo "  sa  search all       Interactively search between all packages."
-    echo "  si  search installed Interactively search between installed packages."
-    echo "  w,  which            Print which package manager is being used."
-    echo "  h,  help             Print this help."
-    echo "  pq,  query <pkg>     Check if a package is installed."
-    echo "  fq, file-query <file> Query the package owning a specific file."
-    echo "  cu, count-updates    Print the number of package needed to be updated."
-    echo ""
+    echo "  i,  install [pkg...]    Install packages, or pick them interactively."
+    echo "  r,  remove [pkg...]     Remove packages, or pick them interactively."
+    echo "  u,  upgrade             Upgrade all installed packages."
+    echo "  f,  fetch               Update the local package database."
+    echo "  n,  info <pkg>          Print package information."
+    echo "  la, list all            List all packages."
+    echo "  li, list installed      List installed packages."
+    echo "  sa, search all          Interactively search all packages."
+    echo "  si, search installed    Interactively search installed packages."
+    echo "  pq, query <pkg>         Check whether a package is installed."
+    echo "  fq, file-query <file>   Find the package that owns a file."
+    echo "  w,  which               Print which package manager is in use."
+    echo "  h,  help                Print this help."
+    echo
     echo "Flags:"
-    echo "  --pm <name>          Force package manager to use."
+    echo "  --pm <name>             Force a specific package manager."
+    echo "  --no-confirm            Don't ask before installing or removing."
     echo
     echo "Interactive commands can read additional filters from standard input."
     echo "Each line is a regular expression (POSIX extended), matching whole package name."
@@ -175,11 +182,11 @@ file_query() {
     fi
 }
 die() {
-    echo >&2 "$0: $1"
+    echo >&2 "$(prog_name): $1"
     exit 1
 }
 die_wrong_usage() {
-    die "$1, run '$0 help' for usage"
+    die "$1, run '$(prog_name) help' for usage"
 }
 is_command() {
     [ -x "$(command -v "$1")" ]
@@ -210,7 +217,7 @@ interactive_filter() {
             --cycle \
             --preview="PM=$PM PM_COLOR=$PM_COLOR $0 info {1}" | cut -d" " -f1
     else
-        die "fzf is not available, run '$0 install fzf' first"
+        die "fzf is not available, run '$(prog_name) install fzf' first"
     fi
 }
 skip_table_header() {

@@ -99,12 +99,12 @@ while [[ $# -gt 0 ]]; do
 		;;
 	-n | --no-nvidia)
 		nvidia=0
-		print_log -r "[nvidia] " -b "Ignored :: " "skipping Nvidia actions"
+		print_log -r "[NVIDIA] " -b "ignored :: " "skipping Nvidia actions"
 		shift
 		;;
 	-h | --shell)
 		export flg_Shell=1
-		print_log -r "[shell] " -b "Reevaluate :: " "shell options"
+		print_log -r "[SHELL] " -b "reevaluate :: " "shell options"
 		shift
 		;;
 	-m | --no-theme)
@@ -136,7 +136,7 @@ HYDE_LOG="$(date +'%y%m%d_%Hh%Mm%Ss')"
 export HYDE_LOG
 
 if [ $dry_run -eq 1 ]; then
-	print_log -n "[test-run] " -b "enabled :: " "Testing without executing"
+	print_log -n "[TEST-RUN] " -b "enabled :: " "Testing without executing"
 fi
 
 #--------------------#
@@ -254,15 +254,15 @@ EOF
 		1) export myShell="zsh" ;;
 		2) export myShell="fish" ;;
 		q)
-			print_log -sec "shell" -crit "Quit" "Exiting..."
+			print_log -sec "SHELL" -crit "Quit" "Exiting..."
 			exit 1
 			;;
 		*)
-			print_log -sec "shell" -warn "Defaulting to zsh"
+			print_log -sec "SHELL" -warn "Defaulting to zsh"
 			export myShell="zsh"
 			;;
 		esac
-		print_log -sec "shell" -stat "detected" "${myShell}"
+		print_log -sec "SHELL" -stat "detected" "${myShell}"
 	fi
 
 	#------------------------------------#
@@ -316,7 +316,7 @@ EOF
 	else
 		print_log -g "[CORE] " -b "install :: " "Core system packages..."
 		"${deez_exe}" deps --install --config "${core_toml}" --source "${cloneDir}" || {
-			print_log -err "[CORE] " -crit "ERROR" "Core package installation failed"
+			print_log -r "[CORE] " -crit "ERROR" "Core package installation failed"
 			exit 1
 		}
 		print_log -g "[CORE] " -b "complete :: " "Core packages installed"
@@ -392,7 +392,7 @@ EOF
 	else
 		print_log -g "[CORE] " -b "verify :: " "Verifying core packages..."
 		"${deez_exe}" deps --install --config "${core_toml}" --source "${cloneDir}" || {
-			print_log -err "[CORE] " -crit "ERROR" "Core package verification failed"
+			print_log -r "[CORE] " -crit "ERROR" "Core package verification failed"
 			exit 1
 		}
 	fi
@@ -405,7 +405,7 @@ EOF
 	else
 		print_log -g "[EXTRA] " -b "verify :: " "Verifying extra packages..."
 		"${deez_exe}" deps --install --config "${extra_toml}" --source "${cloneDir}" || {
-			print_log -err "[EXTRA] " -crit "ERROR" "Extra package verification failed"
+			print_log -r "[EXTRA] " -crit "ERROR" "Extra package verification failed"
 			exit 1
 		}
 		print_log -g "[DEPS] " -b "verify :: " "All packages verified"
@@ -422,7 +422,7 @@ EOF
 		print_log -g "[SHELL] " -b "install :: " "${myShell}..."
 		"${deez_exe}" deps --install --config "${installDir}/dots-groups/shell.toml" \
 			--source "${cloneDir}" --dots "${myShell}" || {
-			print_log -err "[SHELL] " -crit "ERROR" "${myShell} installation failed"
+			print_log -r "[SHELL] " -crit "ERROR" "${myShell} installation failed"
 			exit 1
 		}
 	fi
@@ -432,7 +432,7 @@ EOF
 		print_log -y "[LUA] " -b "dry-run :: " "Would setup Lua environment"
 	else
 		if ! python3 "${cloneDir}/Configs/.local/lib/hyde/pyutils/lua_env.py" create; then
-			print_log -err "[LUA] " -crit "ERROR" "Failed to create Lua environment"
+			print_log -r "[LUA] " -crit "ERROR" "Failed to create Lua environment"
 			exit 1
 		fi
 		print_log -g "[LUA] " -b "complete :: " "Environment setup complete"
@@ -452,8 +452,8 @@ EOF
 		deez_exe="${python_env_dir}/bin/deez"
 
 		[ ! -f "${deez_exe}" ] && {
-			print_log -err "[DEEZ-DOTS] " -crit "ERROR" "deez-dots not found in Python environment"
-			print_log -err "[DEEZ-DOTS] " -crit "FIX" "Run: ./install.sh -p (pre-install only)"
+			print_log -r "[DEEZ-DOTS] " -crit "ERROR" "deez-dots not found in Python environment"
+			print_log -r "[DEEZ-DOTS] " -stat "FIX" "Run: ./install.sh -p (pre-install only)"
 			exit 1
 		}
 
@@ -487,20 +487,20 @@ EOF
 		# carried to the end of the restore and reported there.
 		print_log -g "[DEEZ-DOTS] " -b "deploy :: " "Installing core dotfiles..."
 		"${deez_exe}" --source "${cloneDir}" --config "${installDir}/dots-groups/core.toml" dots --skip-git --rebuild --deploy all || {
-			print_log -err "[DEEZ-DOTS] " -crit "ERROR" "Core dotfiles deployed with failures"
+			print_log -r "[DEEZ-DOTS] " -crit "ERROR" "Core dotfiles deployed with failures"
 			deploy_failed=1
 		}
 
 		print_log -g "[DEEZ-DOTS] " -b "deploy :: " "Installing extra dotfiles..."
 		"${deez_exe}" --source "${cloneDir}" --config "${installDir}/dots-groups/extra.toml" dots --skip-git --rebuild --deploy || {
-			print_log -err "[DEEZ-DOTS] " -crit "ERROR" "Extra dotfiles deployed with failures"
+			print_log -r "[DEEZ-DOTS] " -crit "ERROR" "Extra dotfiles deployed with failures"
 			deploy_failed=1
 		}
 
 		if chk_shell "${myShell:-}"; then
 			print_log -g "[DEEZ-DOTS] " -b "deploy :: " "Installing ${myShell} dotfiles..."
 			"${deez_exe}" --source "${cloneDir}" --config "${installDir}/dots-groups/shell.toml" dots --skip-git --deploy "${myShell}" || {
-				print_log -err "[DEEZ-DOTS] " -crit "ERROR" "${myShell} dotfiles deployed with failures"
+				print_log -r "[DEEZ-DOTS] " -crit "ERROR" "${myShell} dotfiles deployed with failures"
 				deploy_failed=1
 			}
 		fi
@@ -511,7 +511,7 @@ EOF
 	fi
 
 	"${installDir}/restore_thm.sh"
-	print_log -g "[generate] " "cache ::" "Wallpapers..."
+	print_log -g "[THEME] " -b "generate :: " "Wallpaper cache..."
 	if [ "${flg_DryRun}" -ne 1 ]; then
 		# Initialize HyDE environment from deployed dotfiles so scripts don't need hyde-shell init.
 		# LIB_DIR/SHARE_DIR match hyde-shell's own resolution (BIN_DIR/../lib, BIN_DIR/../share
@@ -524,22 +524,24 @@ EOF
 		export HYDE_SHELL_INIT=1
 		# shellcheck disable=SC1091
 		if ! source "$HOME/.local/lib/hyde/globalcontrol.sh"; then
-			print_log -err "[theme] " -crit "ERROR" "HyDE environment could not be initialized"
+			print_log -r "[THEME] " -crit "ERROR" "HyDE environment could not be initialized"
 			theme_failed=1
 		fi
 		if ! "$HOME/.local/lib/hyde/wallpaper/cache.sh" commence -t ""; then
-			print_log -err "[theme] " -crit "ERROR" "Wallpaper cache was not generated"
+			print_log -r "[THEME] " -crit "ERROR" "Wallpaper cache was not generated"
 			theme_failed=1
 		fi
 		if ! "$HOME/.local/lib/hyde/theme.switch.sh" -q; then
-			print_log -err "[theme] " -crit "ERROR" "Theme colour state was not generated"
+			print_log -r "[THEME] " -crit "ERROR" "Theme colour state was not generated"
 			theme_failed=1
 		fi
 		if ! "$HOME/.local/lib/hyde/waybar.py" --update; then
-			print_log -err "[theme] " -crit "ERROR" "Waybar configuration was not updated"
+			print_log -r "[THEME] " -crit "ERROR" "Waybar configuration was not updated"
 			theme_failed=1
 		fi
-		echo "[install] reload :: Hyprland"
+		if [ "${theme_failed:-0}" -eq 0 ]; then
+			print_log -g "[THEME] " -b "complete :: " "Theme applied"
+		fi
 	fi
 
 fi
@@ -600,13 +602,13 @@ fi
 # Reported here rather than where it happened, so the theme, the migrations and
 # the services above still run against the dots that did land.
 if [ "${deploy_failed:-0}" -ne 0 ]; then
-	print_log -err "[DEEZ-DOTS] " -crit "ERROR" "Some dots were not deployed. Deal with the failures reported above and run the restore again."
+	print_log -r "[DEEZ-DOTS] " -crit "ERROR" "Some dots were not deployed. Deal with the failures reported above and run the restore again."
 	print_log -b "Log" " :: " -y "View logs at ${cacheDir}/logs/${HYDE_LOG}"
 	exit 1
 fi
 
 if [ "${theme_failed:-0}" -ne 0 ]; then
-	print_log -err "[theme] " -crit "ERROR" "The theme state is incomplete, so the session would start without colours. Deal with the failures reported above and run the restore again."
+	print_log -r "[THEME] " -crit "ERROR" "The theme state is incomplete, so the session would start without colours. Deal with the failures reported above and run the restore again."
 	print_log -b "Log" " :: " -y "View logs at ${cacheDir}/logs/${HYDE_LOG}"
 	exit 1
 fi

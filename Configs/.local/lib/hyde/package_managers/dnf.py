@@ -76,11 +76,11 @@ def list_installed(ctx) -> list[PackageEntry]:
 
 
 def is_installed(ctx, package: str) -> bool:
-    return ctx.run(["rpm", "-q", package], check=False).returncode == 0
+    return ctx.run(["rpm", "-q", package], check=False, capture=True).returncode == 0
 
 
-def file_query(ctx, target: str) -> None:
-    ctx.run(["dnf", "provides", target])
+def file_query(ctx, target: str) -> int:
+    return ctx.run(["dnf", "provides", target], check=False).returncode
 
 
 def count_updates(ctx) -> int:

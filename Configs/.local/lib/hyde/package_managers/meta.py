@@ -21,6 +21,9 @@ class PMMetadata:
     overrides: tuple[str, ...] = ()
     # Managers whose pending updates must be applied before this one's
     requires: tuple[str, ...] = ()
+    # Managers this one is a superset of (an AUR helper does everything pacman
+    # does); interactive commands use it in their place
+    extends: tuple[str, ...] = ()
 
 
 # Default metadata for managers that don't declare one

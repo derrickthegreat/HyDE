@@ -29,7 +29,7 @@ handle_legacy_service() {
 }
 
 # Main processing
-print_log -sec "services" -stat "restore" "system services..."
+print_log -sec "SERVICES" -stat "restore" "system services..."
 
 while IFS='|' read -r service context command || [ -n "$service" ]; do
     # Skip empty lines and comments
@@ -56,7 +56,7 @@ while IFS='|' read -r service context command || [ -n "$service" ]; do
             if [[ -n "${DBUS_SESSION_BUS_ADDRESS}" ]] && [[ -n $XDG_RUNTIME_DIR ]];then
                 systemctl --user "${cmd_array[@]}" "${service}.service"
             else 
-             print_log -sec "services" -stat "error" "DBUS_SESSION_BUS_ADDRESS or XDG_RUNTIME_DIR not set for user service" -y " skipping"
+             print_log -sec "SERVICES" -stat "error" "DBUS_SESSION_BUS_ADDRESS or XDG_RUNTIME_DIR not set for user service" -y " skipping"
             fi
             else
                 sudo systemctl "${cmd_array[@]}" "${service}.service"
@@ -72,4 +72,4 @@ while IFS='|' read -r service context command || [ -n "$service" ]; do
     
 done < "${scrDir}/restore_svc.lst"
 
-print_log -sec "services" -stat "completed" "service updated successfully"
+print_log -sec "SERVICES" -stat "completed" "service updated successfully"

@@ -255,13 +255,13 @@ setup_python_env() {
     fi
 
     if ! python3 "${pyutils}" create; then
-        print_log -err "[PYTHON] " -crit "ERROR" "Failed to create the Python environment; the error above says why"
-        print_log -err "[PYTHON] " -crit "HINT" "A missing python3 or base-devel is the usual cause"
+        print_log -r "[PYTHON] " -crit "ERROR" "Failed to create the Python environment; the error above says why"
+        print_log -r "[PYTHON] " -stat "HINT" "A missing python3 or base-devel is the usual cause"
         return 1
     fi
 
     if ! "${python_env_dir}/bin/python" "${pyutils}" sync; then
-        print_log -err "[PYTHON] " -crit "ERROR" "Failed to install dependencies"
+        print_log -r "[PYTHON] " -crit "ERROR" "Failed to install dependencies"
         return 1
     fi
 

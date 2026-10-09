@@ -3,7 +3,10 @@
 
 from __future__ import annotations
 
+import difflib
 import os
+import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -12,6 +15,10 @@ if str(HERE) not in sys.path:
     sys.path.insert(0, str(HERE))
 
 import completions
+
+# Scripts without help metadata are run with --help only when their source
+# visibly handles the flag; anything else would just perform its usual action.
+HANDLES_HELP = re.compile(r"""--help\s*[|)]|\|\s*--help|==?\s*["']?--help\b|["']--help,|argparse_init|ArgumentParser\(""")
 
 
 def _sort_key(value: str):
@@ -115,6 +122,46 @@ def _print_hyde_command_help(command: str, cmd_info: dict) -> int:
     return 0
 
 
+def _find_script(topic: str) -> Path | None:
+    """Resolve a script like hyde-shell's run_command: first directory wins, then Lua, shell, Python."""
+    by_dir: dict[Path, dict[str, Path]] = {}
+    for raw in completions.get_script_paths():
+        path = Path(raw)
+        if path.stem == topic:
+            by_dir.setdefault(path.parent, {})[path.suffix] = path
+    for found in by_dir.values():
+        for suffix in (".lua", ".sh", ".py"):
+            if suffix in found:
+                return found[suffix]
+    return None
+
+
+def _print_flag_help(topic: str, path: Path) -> int:
+    try:
+        source = path.read_text(errors="replace")
+    except OSError:
+        source = ""
+    if not HANDLES_HELP.search(source):
+        print(f"No help page for '{topic}': it has no help metadata and no --help option ({path}).", file=sys.stderr)
+        return 1
+    # Going through hyde-shell gives the script the interpreter and environment a normal call gets
+    command = ["bash", str(completions.HYDE_SHELL_PATH), topic, "--help"]
+    try:
+        return subprocess.run(command, stdin=subprocess.DEVNULL, timeout=15, check=False).returncode
+    except subprocess.TimeoutExpired:
+        print(f"'{topic} --help' did not finish within 15 seconds.", file=sys.stderr)
+        return 1
+
+
+def _print_unknown_topic(topic: str, names: set[str]) -> int:
+    print(f"Unknown help topic: {topic}", file=sys.stderr)
+    matches = difflib.get_close_matches(topic, sorted(names), n=3, cutoff=0.6)
+    if matches:
+        print(f"Did you mean: {', '.join(matches)}?", file=sys.stderr)
+    print("Run 'hyde-shell -s' to list scripts.", file=sys.stderr)
+    return 1
+
+
 def _print_root_help() -> int:
     hyde_meta = completions.parse_new_style(str(completions.HYDE_SHELL_PATH))
     commands = hyde_meta.get("commands", {})
@@ -147,12 +194,18 @@ def main(argv: list[str] | None = None) -> int:
         return _print_script_help(script_name, meta, subtopic)
 
     hyde_meta = completions.parse_new_style(str(completions.HYDE_SHELL_PATH))
-    cmd_name, cmd_info = _find_cmd(hyde_meta.get("commands", {}), topic)
+    commands = hyde_meta.get("commands", {})
+    cmd_name, cmd_info = _find_cmd(commands, topic)
     if cmd_info:
         return _print_hyde_command_help(cmd_name, cmd_info)
 
-    print(f"Unknown help topic: {topic}", file=sys.stderr)
-    return 1
+    stem = topic.rsplit(".", 1)[0] if topic.endswith((".sh", ".py", ".lua")) else topic
+    script = _find_script(stem)
+    if script:
+        return _print_flag_help(stem, script)
+
+    names = set(script_index) | set(commands) | {Path(p).stem for p in completions.get_script_paths()}
+    return _print_unknown_topic(topic, names)
 
 
 if __name__ == "__main__":

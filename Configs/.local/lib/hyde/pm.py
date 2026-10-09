@@ -103,13 +103,17 @@ class PMState:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog=Path(sys.argv[0]).name,
+        # hyde-shell runs us for `hyde-shell pm`, so name that rather than the file
+        prog="hyde-shell pm" if os.environ.get("HYDE_SHELL_INIT") == "1" else Path(sys.argv[0]).name,
         description="Package manager wrapper over multiple package_managers.",
+        # Room for "search-installed (si)" so descriptions stay on their own line
+        formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position=30),
     )
-    parser.add_argument("--pm", dest="force_pm", help="Force package manager to use a specific backend.")
+    parser.add_argument("--pm", dest="force_pm", metavar="NAME", help="Force package manager to use a specific backend.")
     parser.add_argument("--available", dest="available", action="store_true", help="List available package managers and exit.")
     parser.add_argument("--no-confirm", dest="no_confirm", action="store_true", help="Do not ask for confirmation when installing/removing packages.")
-    subparsers = parser.add_subparsers(dest="action", required=False)
+    # Without a metavar argparse spells out every command and alias, twice
+    subparsers = parser.add_subparsers(dest="action", required=False, title="commands", metavar="<command>")
 
     def add_cmd(name: str, action: str, *, aliases: Sequence[str] = (), help_text: str) -> argparse.ArgumentParser:
         cmd = subparsers.add_parser(
@@ -191,7 +195,14 @@ def main(argv: Sequence[str] | None = None) -> None:
     )
 
     handler = COMMAND_HANDLERS[args.action]
-    handler(state, args)
+    # The package manager has already printed why it failed; pass its status on
+    # instead of a traceback. zsh's command-not-found handler relies on `fq` failing.
+    try:
+        handler(state, args)
+    except subprocess.CalledProcessError as exc:
+        sys.exit(exc.returncode or 1)
+    except KeyboardInterrupt:
+        sys.exit(130)
 
 
 def _discover_managers() -> list[tuple[str, PMMetadata]]:
@@ -267,10 +278,16 @@ def determine_pm(forced: str | None) -> str:
     env_pm = os.environ.get("PM")
     if env_pm and shutil.which(env_pm):
         return env_pm
-    # Use the first available manager (highest priority after conflict resolution)
-    for name in list_available_managers():
-        return name
-    die("no supported package manager found")
+    # Use the first available manager (highest priority after conflict resolution),
+    # or a manager that extends it, so installs and searches reach the AUR as pm.sh did
+    available = list_available_managers()
+    if not available:
+        die("no supported package manager found")
+    base = available[0]
+    for name in available[1:]:
+        if base in getattr(load_manager(name), "META", DEFAULT_META).extends:
+            return name
+    return base
 
 
 def load_manager(name: str) -> ModuleType:
@@ -357,6 +374,9 @@ def handle_query(state: PMState, package: str) -> None:
         die(f"is-installed command is not supported for package manager '{state.name}'")
     result = func(state.ctx, package)
     print("Installed" if result else "Not installed")
+    # Scripts test `pm query` by exit status, as they did with pm.sh
+    if not result:
+        sys.exit(1)
 
 
 def handle_file_query(state: PMState, target: str) -> None:
@@ -365,7 +385,10 @@ def handle_file_query(state: PMState, target: str) -> None:
     func = getattr(state.module, "file_query", None)
     if not func:
         die(f"file-query command is not supported for package manager '{state.name}'")
-    func(state.ctx, target)
+    # "No package owns this file" is an answer, not an error: report it by exit status only
+    status = func(state.ctx, target)
+    if status:
+        sys.exit(status)
 
 
 def handle_count_updates(state: PMState) -> None:
